@@ -4,16 +4,16 @@ function status = ant_routing_layer(N, S)
 % Define variables:
 % antInterval:       --time interval of ant agent;
 % antStart:          --start time, default value is 3 second;
-% sourceRate:        --源节点数据发送率，默认值=0.1，即10 sec 1 msg；
+% sourceRate:        --data generation rate in source node, default value =0.1 10 sec 1 msg
 % antRatio:
-% c1,c2,z:           --计算reward(r)的系数，参考公式3.
+% c1,c2,z:           --coefficient in reward(r), see equation 3.
 % dataGain:          --the data ants are prevented from choosing links with very low
 %                      probability by remapping p to p^dataGain, dataGain>1, default value = 1.2
-% eta:               --系数，参考公式1
+% eta:               --coefficient, see equation 1.
 % probability:
-% rewardScale:       --learning rate， see equation 3.
-% DESTINATIONS:       --目的节点向量，值为1，表示目的节点;
-% SOURCES：           --源节点向量，值为1，表示目的节点;
+% rewardScale:       --learning rate, see equation 3.
+% DESTINATIONS:      --;
+% SOURCES:           --;
 
 % Written by Ying Zhang, yzhang@parc.com
 % Last modified: Feb. 17, 2004  by YZ
@@ -162,7 +162,7 @@ case 'Packet_Received'
     rdata = data.data;
     try msgID = rdata.msgID; catch msgID = 0; end
     try list = rdata.list; catch list = []; end
-    nID = find(NEIGHBORS{ID}==rdata.from); %nID表示上一个节点在邻居列表中的索引号
+    nID = find(NEIGHBORS{ID}==rdata.from); %nID denotes the index last node in neighbor list.
     
     data.data.forward = 1;
     
@@ -187,9 +187,14 @@ case 'Packet_Received'
            
     if (msgID == -2) %backward ant
         %update average cost and variance according to equation 1 in paper.
+        %cost be the current cost of the path from the destination to the
+        %current node.
         data.data.cost = rdata.cost + 1;
         if (isempty(memory.window))
             memory.average = data.data.cost;
+            %An observation window W of size M is kept for storing the cost
+            %of path M pahts, so that the minimum cost within the window W
+            %can be obtained.
             memory.window = [data.data.cost];
         else
             memory.average = memory.average + eta*(data.data.cost - memory.average);
@@ -197,18 +202,19 @@ case 'Packet_Received'
             memory.window = [data.data.cost, memory.window];
             memory.window = memory.window(1:min(windowSize, length(memory.window)));
         end
-        %计算更新probability, see equation 3 in paper.
+        %update probability, see equation 3 in paper.
         Iinf = min(memory.window); 
         Isup = memory.average + z*sqrt(memory.variance/windowSize);
+        %Given a reward r, calculated followed by equation 3.
         r = c1*Iinf/data.data.cost;
         tmp = (Isup-Iinf) + (data.data.cost-Iinf);
         if (tmp>0)
             r = r + c2*(Isup-Iinf)/tmp;
         end
         probability{ID} = Set_New_Prob(probability{ID}, nID, rewardScale*r); %rewardScale:learning rate
-        if (~SOURCES(ID))  %没有到达源节点，继续发送backward ant        
+        if (~SOURCES(ID))  %do not arrive source node ,continue to forward backward ant            
             status = ant_routing_layer(N, make_event(t, 'Send_Packet', ID, data.data));
-        else %到达源节点，计算interval
+        else %reach source node, calculate interval
             memory.interval = memory.interval*exp(r-0.5); %adaptively set the interval
         end
     end
@@ -227,6 +233,7 @@ case 'Clock_Tick'
     try type = data.type; catch type = 'none'; end
     if (strcmp(type, 'ant_start'))
         if (isempty(probability{ID}))
+            %probability initialization
             probability{ID} = ones(1, length(NEIGHBORS{ID}))/length(NEIGHBORS{ID});
         end
         if(SOURCES(ID))
@@ -281,11 +288,11 @@ global ID
 clock.type = 'ant_start';
 prowler('InsertEvents2Q', make_event(alarm_time, 'Clock_Tick', ID, clock));
 
-% 更新转移概率，参考文章公式2，3
-% 参数说明：
-% old：    --邻居列表的概率向量
-% idx：    --需要更新的概率，表示在邻居列表中的索引
-% r:       --reward
+% update transfer probability, see equation 2,3
+% Define variables:
+% old:    --probability vector of neigbor list 
+% idx:    --probability need to update, denote the index in list.
+% r:      --reward
 function new = Set_New_Prob(old, idx, r)
 
 for i=1:length(old)

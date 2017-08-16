@@ -43,7 +43,6 @@ Time_Interval = 10;
 dir=  'testant/results0807';
 TIME = 1:Time_Interval:Max_Sim_Time;
 
-% 设置layers，不同的routing protocol对应不同的layer.
 % Basic Ant
 %set_layers({'mac', 'neighborhood', 'ant_routing', 'init_hello', 'app', 'stats'}); % for basic ant routing
 % EEABR
@@ -59,7 +58,7 @@ set_layers({'mac', 'neighborhood', 'eeabr', 'init_hello', 'app', 'stats'}); % fo
 [delays, throughput, lossrate, succrate, energy, energy_var, sent] = routing_test(Max_Sim_Time, Number_of_Runs, Time_Interval);
 X=[TIME;delays;throughput;lossrate;succrate;energy;energy_var;sent];
 
-filename = [dir, '/eeabr.txt'];
+filename = [dir, '/ant_routing'];
 fid = fopen(filename, 'w');
 fprintf(fid, '%d %f %f %f %f %d %f %d\n', X);
 fclose(fid);
