@@ -59,6 +59,8 @@ persistent c1 c2
 persistent z
 persistent rewardScale
 persistent dataGain
+persistent initPower
+persistent path_legth
 
 switch event
 case 'Init_Application'  % Initilize Application
@@ -182,10 +184,19 @@ case 'Packet_Received'
         if(DESTINATIONS(ID)) %arriving destination
             antBackward.msgID = -2; %change to backward ant
             antBackward.list = rdata.list;
-            antBackward.cost = 0;
-            %TODO:
-            %obtain the min energy and average enengy in this list.
             
+            %calculate the pheromone increment according to equation 5 in
+            %eeabr. obtain the min energy and average enengy in this list,
+            %the length of the list, initial energy of node.
+            %added by xinlu 2017/08/19
+            initPower = sim_params('get_app', 'InitPower'); 
+            path_length = length(antBackward.list);
+            [maxValue,minValue,avgValue] = max_min_avg_in_path(antBackward.list);
+            ph_increment = 1/(initPower - (minValue - path_length)/(maxValue - path_length));
+            
+            %antBackward.cost = 0; %the original ant routing consider only
+            %consider the path length as the cost.
+            antBackward.cost = ph_increment;
             
             status = eeabr_layer(N, make_event(t, 'Send_Packet', ID, antBackward));
         else
@@ -197,6 +208,7 @@ case 'Packet_Received'
         %update average cost and variance according to equation 1 in paper.
         %cost be the current cost of the path from the destination to the
         %current node.
+        
         data.data.cost = rdata.cost + 1;
         if (isempty(memory.window))
             memory.average = data.data.cost;
@@ -335,3 +347,19 @@ if (~isempty(NEIGHBORS{ID})) %if there is neighbor
     end
 end
 out=ngh_energy;
+
+%get the max energy node in the path
+function [maxValue,minValue,avgValue] = max_min_avg_in_path(list)
+global ATTRIBUTES
+N = length(ATTRIBUTES);
+for i=1:N
+    power(i) = ATTRIBUTES{i}.power;
+end
+
+M = length(list);
+for i=1:M
+    list_energy(i) = power(list(i));
+end
+maxValue = max(list_energy);
+minValue = min(list_energy);
+avgValue = mean(list_energy);
