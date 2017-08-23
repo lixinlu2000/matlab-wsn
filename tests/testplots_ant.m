@@ -2,7 +2,8 @@ function testplots
 %lists={'gridrouting','gradfloodagg','aodv','mcbrtree','mcbrsearch','mcbrflood'};
 %lists={'gradflood','mcbrflood','gridrouting'};
 %lists={'gradflood','gridrouting','gridroutingdup','mcbrfloodsqrt'};
-lists={'ant_routing','mcbr_ant','mcbr_flood_ant','mcbr_smart_ant'};
+%lists={'ant_routing','mcbr_ant','mcbr_flood_ant','mcbr_smart_ant'};
+lists={'eeabr','ant_routing'};
 %lists={'mcbrfloods','mcbrflood','mcbrfloodsqrt','mcbrflood1','mcbrfloodsdup','mcbrflooddup','mcbrfloodsqrtdup','mcbrflood1dup'};
 %testdir='tests/';
 %tests = {'testpeg'};
@@ -20,7 +21,9 @@ testlists{1} = lists;
 
 metricsY = {'delays','throughput','succrate','energy','efficiency','lifetime'};
 testsTime = {20};
-resultdir = 'tests/testant/results_original';
+%resultdir = 'tests/testant/results_original';
+resultdir=  'testant/results_0823';
+%resultdir = 'tests/testant/results_0823';
 for i=1:1
     for j=1:size(metricsY,2)
         getplots('time', metricsY{j}, testsTime{i}, resultdir, testlists{i},resultdir,strcat(resultdir,'/',metricsY{j}),num_node(i));

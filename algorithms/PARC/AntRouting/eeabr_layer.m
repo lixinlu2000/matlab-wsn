@@ -60,7 +60,7 @@ persistent z
 persistent rewardScale
 persistent dataGain
 persistent initPower
-persistent path_legth
+persistent path_length
 
 switch event
 case 'Init_Application'  % Initilize Application
@@ -193,10 +193,12 @@ case 'Packet_Received'
             path_length = length(antBackward.list);
             [maxValue,minValue,avgValue] = max_min_avg_in_path(antBackward.list);
             ph_increment = 1/(initPower - (minValue - path_length)/(maxValue - path_length));
+            ph_increment = exp(ph_increment); %avoid pheromone increment too low
             
             %antBackward.cost = 0; %the original ant routing consider only
             %consider the path length as the cost.
             antBackward.cost = ph_increment;
+            antBackward.ph_increment = ph_increment;
             
             status = eeabr_layer(N, make_event(t, 'Send_Packet', ID, antBackward));
         else
@@ -209,7 +211,12 @@ case 'Packet_Received'
         %cost be the current cost of the path from the destination to the
         %current node.
         
-        data.data.cost = rdata.cost + 1;
+        %calculate the travelled distance by backward ant
+        backward_length = path_length - length(data.data.list);
+        
+        %data.data.cost = rdata.cost + 1;
+        data.data.cost = rdata.ph_increment / backward_length;
+        
         if (isempty(memory.window))
             memory.average = data.data.cost;
             %An observation window W of size M is kept for storing the cost
@@ -231,7 +238,7 @@ case 'Packet_Received'
         if (tmp>0)
             r = r + c2*(Isup-Iinf)/tmp;
         end
-        probability{ID} = Set_New_Prob(probability{ID}, nID, rewardScale*r); %rewardScale:learning rate
+        probability{ID} = Set_New_Prob_Eeabr(probability{ID}, nID, data.data.cost);
         if (~SOURCES(ID))  %do not arrive source node ,continue to forward backward ant        
             status = eeabr_layer(N, make_event(t, 'Send_Packet', ID, data.data));
         else %reach source node, calculate interval
@@ -322,6 +329,18 @@ for i=1:length(old)
         new(i) = old(i) - r*old(i);
     end
 end
+
+function new = Set_New_Prob_Eeabr(old,idx,ph)
+for i =1:length(old)
+    if(i==idx)
+        new(i) = old(i) + ph;
+    else
+        %0.1 is a coefficient, such that (1-0.1) represents the
+        %evaportation of trail, according to the equation 3 in eeabr.
+        new(i) = old(i) - 0.1 * old(i); 
+    end
+end
+
 
 % get the residual energy for specific node
 % added by xinlu 2017/8/2
