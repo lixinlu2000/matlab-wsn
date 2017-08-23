@@ -42,6 +42,7 @@ persistent hello_times
 switch event
 case 'Init_Application'
     if (ix==1)
+        %initilize the time interval = 0.5 second and back hello times = 3
         clock_interval = sim_params('get_app', 'InitInterval');
         if (isempty(clock_interval)) clock_interval = 20000; end %0.5 second
         hello_times = sim_params('get_app', 'InitNofTimes');
@@ -67,7 +68,7 @@ case 'Clock_Tick'
     if (strcmpi(type, 'backward_dest')) % a send signal
       if (DESTINATIONS(ID))
             dest.msgID = -inf;
-            dest.address = 0;
+            dest.address = 0; %broadcast
             maxhops = sim_params('get_app', 'MaxHops');
             if (~isempty(maxhops))
                 dest.maxhops = maxhops;

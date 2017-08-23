@@ -1,22 +1,8 @@
-function status = energy_ant_layer(N, S)
+function status = mcbr_smart_ant_e_layer(N, S)
 
 %* Copyright (C) 2003 PARC Inc.  All Rights Reserved.
-% Define variables:
-% antInterval:       --time interval of ant agent;
-% antStart:          --start time, default value is 3 second;
-% sourceRate:        --源节点数据发送率，默认值=0.1，即10 sec 1 msg；
-% antRatio:
-% c1,c2,z:           --计算reward(r)的系数，参考公式3.
-% dataGain:          --the data ants are prevented from choosing links with very low
-%                      probability by remapping p to p^dataGain, dataGain>1, default value = 1.2
-% probGain:          --default value = 1.2
-% eta:               --系数，参考公式1
-% probability:
-% rewardScale:       --learning rate， see equation 3.
-% DESTINATIONS:       --目的节点向量，值为1，表示目的节点;
-% SOURCES：           --源节点向量，值为1，表示目的节点;
 
-% Written by Ying Zhang, yzhang@parc.com
+% Written by Ying Zhang, yzhang@parc.com, modified from Lukas Kuhn's code
 % Last modified: Feb. 17, 2004  by YZ
 
 % DO NOT edit simulator code (lines that begin with S;)
@@ -45,9 +31,6 @@ S; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv%
 
-%this implementation is based on AntNet by G. D. Caro and M. Dorigo
-%with added mcbr functionality
-
 global NEIGHBORS
 global DESTINATIONS
 global SOURCES
@@ -63,10 +46,12 @@ persistent rewardScale
 persistent dataGain
 persistent probGain
 
+persistent backDelayMin
+persistent backDelayRand
+
 switch event
-case 'Init_Application'  % Initilize Application
+case 'Init_Application'
     if (ix==1)
-        sim_params('set_app', 'Promiscuous', 0);
         antStart = sim_params('get_app', 'AntStart');
         if (isempty(antStart)) antStart = 120000; end % 3 sec
         antRatio = sim_params('get_app', 'AntRatio');
@@ -76,7 +61,7 @@ case 'Init_Application'  % Initilize Application
         antInterval = antRatio*40000/sourceRate; 
         windowSize = sim_params('get_app', 'WindowSize');
         if (isempty(windowSize)) windowSize = 10; end
-        eta = min(5/windowSize, 1);  % see equation 1 in paper.
+        eta = min(5/windowSize, 1);
         c1 = sim_params('get_app', 'C1');
         if (isempty(c1)) c1 = 0.7; end
         c2 = 1-c1;
@@ -88,83 +73,59 @@ case 'Init_Application'  % Initilize Application
         if (isempty(dataGain)) dataGain = 1.2; end
         probGain = sim_params('get_app', 'ProbGain');
         if (isempty(probGain)) probGain = 1.2; end
+        
+        backDelayMin = sim_params('get_app', 'BackDelayMin');
+        if (isempty(backDelayMin)) backDelayMin = 40000; end %1 sec
+        backDelayRand = sim_params('get_app', 'BackDelayRand');
+        if (isempty(backDelayRand)) backDelayRand = 20000; end %0.5 sec
+        
     end
     probability{ID} = [];
-    memory = struct('average', 0, 'variance', 0, 'window', [], 'potentials', [], 'interval', antInterval);
-    
+    memory = struct('average', 0, 'variance', 0, 'window', [],  'potentials', [], 'interval', antInterval);
     Set_Start_Clock(antStart); %start forward ant 
-    
-case 'Send_Packet'  % Send packet
+case 'Send_Packet'
     
     try msgID = data.msgID; catch msgID = 0; end   
     try list = data.list; catch list = [];  end
     
-    if (msgID == -inf) %init backward packet
-        if (isempty(memory.potentials) || DESTINATIONS(ID))
-            data.cost = mcbr_dest; %mcbr_dest is function
+    if (msgID == -inf) %init packet
+        if (isempty(memory.potentials)|| DESTINATIONS(ID))
+            data.cost = mcbr_dest;
         else
-            data.cost = mcbr_cost + min(memory.potentials); %mcbr_cost is function
+            data.cost = mcbr_cost + min(memory.potentials);
         end
     end
            
     if (msgID == -2) %backward ant
-        try 
-            data.address = list(1); %address of next hop
+        try
+            data.address = list(1);
             data.list = list(2:length(list));
             PrintMessage(['<-', num2str(data.address')]);
         catch
             pass = 0;
         end
-    elseif (msgID == -1)  %forward ant 
+    elseif (msgID == -1)  %forward ant
         data.list = [ID, list];
-        if (~isempty(NEIGHBORS{ID})) %if there is neighbor
-           RestNEIGHBORS = setdiff(NEIGHBORS{ID}, data.list);
-           if (isempty(RestNEIGHBORS)) RestNEIGHBORS = NEIGHBORS{ID}; end
-           total = 0;
-           for n = RestNEIGHBORS
-               ndx = find(NEIGHBORS{ID}==n);
-               total = total + probability{ID}(ndx);
-           end
-           %total can be < 1 since only a fraction of the neighbors
-           prob = rand*total;
-           for n = RestNEIGHBORS
-               ndx = find(NEIGHBORS{ID}==n);
-               if (prob>0)
-                   prob = prob - probability{ID}(ndx);
-                   if(prob <=0)
-                      data.address = NEIGHBORS{ID}(ndx); %select next hop
-                      PrintMessage(['->', num2str(data.address')]);
-                      data.width = 5*probability{ID}(ndx);
-                      inlist = find(data.list==data.address);
-                      if (~isempty(inlist)) %there is loop
-                          listsize = length(data.list);
-                          if (listsize < 2*inlist) %loop is long
-                              pass = 0;
-                          else %cut loop
-                              data.list = data.list(inlist+1:listsize);
-                          end
-                      end
-                   end
-               end
-           end
-       else %no neighbor
-           pass = 0;
-       end
-   elseif (msgID >= 0) % data packet      
+        data.address = 0; %broadcast       
+    elseif (msgID >= 0) % data packet
        try
            total = 0;
            for ndx = 1:length(NEIGHBORS{ID})
                total = total + probability{ID}(ndx)^dataGain;
            end
            %total can be < 1 since power is applied
+           if (total==0)
+               probability{ID} = ones(1, length(probability{ID}))/length(probability{ID});
+               total = 1;
+           end
            prob = rand*total;
            for ndx = 1:length(NEIGHBORS{ID})
                if (prob>0)
                    prob = prob - probability{ID}(ndx)^dataGain;
                    if(prob <=0)
-                      data.address = NEIGHBORS{ID}(ndx); %select next hop 
-                      PrintMessage(['f', num2str(data.address')]);
+                      data.address = NEIGHBORS{ID}(ndx);
                       data.width = 5*probability{ID}(ndx);
+                      PrintMessage(['f', num2str(data.address')]);
                    end
                end
            end
@@ -175,6 +136,7 @@ case 'Send_Packet'  % Send packet
         
 case 'Packet_Received'
     rdata = data.data;
+    try duplicated = data.duplicated; catch duplicated = 0; end
     try msgID = rdata.msgID; catch msgID = 0; end
     try list = rdata.list; catch list = []; end
     nID = find(NEIGHBORS{ID}==rdata.from);
@@ -182,27 +144,29 @@ case 'Packet_Received'
     data.data.forward = 1;
     
     pass=0;
-    
+        
     if (msgID ~= -inf)
         try prob = probability{ID}(nID);
         catch probability{ID}(nID) = 0;
         end
     else
         memory.potentials(nID) = rdata.cost;
-    end
+    end   
     
     if (msgID == -1) %forward ant
-        if(DESTINATIONS(ID)) %arriving destination
+        if( DESTINATIONS(ID))
             antBackward.msgID = -2;
-            antBackward.list = rdata.list;
-            antBackward.cost = 0;
-            status = energy_ant_layer(N, make_event(t, 'Send_Packet', ID, antBackward));
-        else
-            status = energy_ant_layer(N, make_event(t, 'Send_Packet', ID, data.data));
+            antBackward.list = rdata.list;          
+            antBackward.cost = memory.average;
+            
+            %delay for some time to avoid collison at the destination
+            status = mcbr_smart_ant_e_layer(N, make_event(t+backDelayMin+backDelayRand*rand, 'Send_Packet', ID, antBackward));
+        elseif (~duplicated && (probability{ID}(nID) < 1/length(probability{ID}))) %forward only if ant from weak link
+            status = mcbr_smart_ant_e_layer(N, make_event(t, 'Send_Packet', ID, data.data));
         end
     end
            
-    if (msgID == -2) %backward ant
+    if ((msgID == -2) && (~duplicated)) %backward ant
         data.data.cost = rdata.cost + mcbr_cost;
         if (isempty(memory.window))
             memory.average = data.data.cost;
@@ -221,46 +185,52 @@ case 'Packet_Received'
         if (tmp>0)
             r = r + c2*(Isup-Iinf)/tmp;
         end
-        probability{ID} = Set_New_Prob(probability{ID}, nID, rewardScale*r);
-        if (~SOURCES(ID))          
-            status = energy_ant_layer(N, make_event(t, 'Send_Packet', ID, data.data));
-        else
-            memory.interval = memory.interval*exp(r-0.5); %adaptively set the interval
+        if (data.data.address==ID) %I am in the path, reinforce it
+            probability{ID} = Set_New_Prob(probability{ID}, nID, rewardScale*r);
+            if (~SOURCES(ID))          
+                status = mcbr_smart_ant_e_layer(N, make_event(t, 'Send_Packet', ID, data.data));
+            else
+                memory.interval = memory.interval*exp(r-0.5);
+            end
+        else %I am not in path, but maybe good to go through that node too
+            probability{ID} = Set_New_Prob(probability{ID}, nID, rewardScale*r/2);
         end
     end
     
-    if ((msgID >= 0) && (data.data.address == ID)) %data packet
-        %display the residual energy for debug
-        %disp(['energy_ant_layer, current node: ' num2str(ID) ' residual energy:' num2str(get_energy(ID))])
-        %display the neighbor list and the residual energy for neighbors
-        %ngh_energy = get_ngh_energy(ID)
-        if(~DESTINATIONS(ID))
-            status = energy_ant_layer(N, make_event(t, 'Send_Packet', ID, data.data));
-        else % use for confirmation only
-            data.data.address = 0;
-            status = common_layer(N, make_event(t, 'Send_Packet', ID, data.data));
+    if (msgID >= 0) %data packet
+        if (DESTINATIONS(ID))
+            antBackward.msgID = -2;     
+            antBackward.cost = 0;
+            
+            status = mcbr_smart_ant_e_layer(N, make_event(t, 'Send_Packet', ID, antBackward));
+        end
+            
+        if(~DESTINATIONS(ID) && (data.data.address == ID)) %forward if is for me
+            status = mcbr_smart_ant_e_layer(N, make_event(t, 'Send_Packet', ID, data.data));
         end
     end
     
-    if ((DESTINATIONS(ID) && msgID >= 0) || (msgID == -inf))
+    if ((DESTINATIONS(ID) && msgID >= 0 && (~duplicated)) || (msgID == -inf))
         pass =1;
     end
     
 case 'Clock_Tick'
     try type = data.type; catch type = 'none'; end
     if (strcmp(type, 'ant_start'))
-        if (isempty(probability{ID}))  %see equation 4 in paper
+        if (isempty(probability{ID}))
             if (DESTINATIONS(ID))
                 cost = 0;
             else
                 cost = mcbr_cost + min(memory.potentials);
             end
-            values = exp((cost - memory.potentials)*probGain);       
+            values = exp((cost - memory.potentials)*probGain);           
             probability{ID} = values/sum(values);
         end
         if(SOURCES(ID))
             antForward.msgID = -1;
-            status = energy_ant_layer(N, make_event(t+4000, 'Send_Packet', ID, antForward));             
+            status = mcbr_smart_ant_e_layer(N, make_event(t+4000, 'Send_Packet', ID, antForward));
+        else
+            memory.interval = memory.interval*probGain;
         end
         Set_Start_Clock(t+memory.interval);
         pass =0;
@@ -320,6 +290,10 @@ prowler('InsertEvents2Q', make_event(alarm_time, 'Clock_Tick', ID, clock));
 
 function new = Set_New_Prob(old, idx, r)
 
+if (sum(old)==0)
+    old = ones(1,length(old))/length(old);
+end
+
 if (r>0)
 	for i=1:length(old)
         if (i==idx)
@@ -341,6 +315,10 @@ end
 %another function to try
 function new = Set_New_Prob1(old, idx, r)
 
+if (sum(old)==0)
+    old = ones(1,length(old))/length(old);
+end
+
 if (r>0)
 	for i=1:length(old)
         if (i==idx)
@@ -358,30 +336,4 @@ else
         end
 	end
 end
-
-% get the residual energy for specific node
-% added by xinlu 2017/8/2
-function out=get_energy(ID)
-global ATTRIBUTES
-out = ATTRIBUTES{ID}.power;
-    
-% get the residual energy array for specific node neighbor list
-% added by xinlu 2017/8/2
-function out=get_ngh_energy(ID)
-global NEIGHBORS
-global ATTRIBUTES
-if (~isempty(NEIGHBORS{ID})) %if there is neighbor
-    N = length(ATTRIBUTES);
-    for i=1:N
-        power(i) = ATTRIBUTES{i}.power;
-    end
-
-    M = length(NEIGHBORS{ID});
-    for i=1:M
-        ngh_energy{i}.id = NEIGHBORS{ID}(i);
-        ngh_energy{i}.energy=power(ngh_energy{i}.id); 
-    end
-end
-out=ngh_energy;
-    
 
