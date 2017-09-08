@@ -1,4 +1,4 @@
-function getplots(nameX, nameY, num_points, dir, list, tag, figurename, num)
+function getplots_ant(nameX, nameY, num_points, dir, list, tag, figurename, num)
 % Define variables:
 % nameX:        --'time'
 % num_points:   -- the number of points

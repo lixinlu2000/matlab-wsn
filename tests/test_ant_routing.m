@@ -39,29 +39,31 @@ sim_params('set_app', 'RandSpeedDestination', 0);
 sim_params('set_app', 'RandSpeedSource', 0.00);
 
 Max_Sim_Time = 200;
-Number_of_Runs = 1;
+Number_of_Runs = 5;
 Time_Interval = 10;
-dir=  'testant/results_0823';
+dir=  'testant/results0905';
 TIME = 1:Time_Interval:Max_Sim_Time;
 
 % Basic Ant
 %set_layers({'mac', 'neighborhood', 'ant_routing', 'init_hello', 'app', 'stats'}); % for basic ant routing
+set_layers({'mac', 'neighborhood', 'accr_basic','init_hello','app', 'stats'}); % for accr basic ant routing
 % EEABR
 %set_layers({'mac', 'neighborhood', 'eeabr', 'init_hello', 'app', 'stats'}); % for basic ant routing
 % Sensor-driven Cost-aware Ant Routing (SC) 
 %set_layers({'mac', 'neighborhood', 'check_duplicate', 'mcbr_ant', 'init_backward', 'app', 'stats'});
 % Sensor-driven Cost-aware Energy Ant Routing (SC_E) 
-set_layers({'mac', 'neighborhood', 'check_duplicate', 'mcbr_ant_e', 'init_backward', 'app', 'stats'});
+%set_layers({'mac', 'neighborhood', 'check_duplicate', 'mcbr_ant_e', 'init_backward', 'app', 'stats'});
 % Energy ant routing
 %set_layers({'mac', 'neighborhood', 'check_duplicate', 'energy_ant', 'init_backward', 'app', 'stats'});
 % Flooded Forward Ant Routing (FF)
 %set_layers({'mac', 'neighborhood','transmit_queue','delay_transmit', 'mcbr_smart_ant', 'init_backward', 'app', 'stats'});
+%set_layers({'mac', 'neighborhood','transmit_queue','delay_transmit', 'mcbr_smart_ant_e', 'init_backward', 'app', 'stats'});
 % Flooded Piggybacked Ant Routing (FP)
 %set_layers({'mac', 'neighborhood', 'delay_transmit', 'mcbr_flood_ant', 'init_backward', 'app', 'stats'});
 [delays, throughput, lossrate, succrate, energy, energy_var, sent] = routing_test(Max_Sim_Time, Number_of_Runs, Time_Interval);
 X=[TIME;delays;throughput;lossrate;succrate;energy;energy_var;sent];
 
-filename = [dir, '/mcbr_ant_e.txt'];
+filename = [dir, '/accr-basic.txt'];
 fid = fopen(filename, 'w');
 fprintf(fid, '%d %f %f %f %f %d %f %d\n', X);
 fclose(fid);

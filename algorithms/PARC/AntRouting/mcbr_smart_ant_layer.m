@@ -1,7 +1,7 @@
 function status = mcbr_smart_ant_layer(N, S)
 
 %* Copyright (C) 2003 PARC Inc.  All Rights Reserved.
-
+% FF protocol implementation
 % Written by Ying Zhang, yzhang@parc.com, modified from Lukas Kuhn's code
 % Last modified: Feb. 17, 2004  by YZ
 

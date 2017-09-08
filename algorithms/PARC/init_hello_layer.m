@@ -12,7 +12,7 @@ function status = init_hello_layer(N, S)
 % msgID:            --msgID is given by application at the source node; 
 %                     typically different msgIDs are for different 
 %                     destinations or different types of data
-% address£º         --address of next hop; if address is 0 it means broadcast
+% address           --address of next hop; if address is 0 it means broadcast
 
 % Written by Ying Zhang, yzhang@parc.com
 % Last modified: Nov. 22, 2003  by YZ

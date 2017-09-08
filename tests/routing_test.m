@@ -1,4 +1,4 @@
-function [latency, throughput, lossrate, succrate, energy, energy_var, packet_sent] = routing_test(varargin)
+function [latency, throughput, lossrate, succrate, energy, energy_var, packet_sent,control_packet] = routing_test(varargin)
 
 % 输入参数：
 %   Max_Sim_Time     --最大的模拟时间，默认单位为second
@@ -13,7 +13,7 @@ function [latency, throughput, lossrate, succrate, energy, energy_var, packet_se
 % Written by Lukas D. Kuhn, lukas.kuhn@parc.com
 % Last modified: Dec. 22, 2003  by YZ
 
-global LATENCY THROUGHPUT LOSSRATE SUCCRATE ENERGY ENERGY_VAR PACKET_SENT
+global LATENCY THROUGHPUT LOSSRATE SUCCRATE ENERGY ENERGY_VAR PACKET_SENT CONTROL_PACKET
 
 Max_Sim_Time = varargin{1};
 Number_of_Runs = varargin{2};
@@ -38,6 +38,7 @@ for (inum=1:Number_of_Runs)
         energy = ENERGY;
         energy_var = ENERGY_VAR;
         packet_sent = PACKET_SENT;
+        control_packet = CONTROL_PACKET;
         succrate = SUCCRATE;
     else
         latency = (latency*(inum-1)+LATENCY)/inum;
@@ -46,6 +47,7 @@ for (inum=1:Number_of_Runs)
         energy = (energy*(inum-1)+ENERGY)/inum;
         energy_var = (energy_var*(inum-1)+ENERGY_VAR)/inum;
         packet_sent = (packet_sent*(inum-1)+PACKET_SENT)/inum;
+        control_packet = (control_packet*(inum-1)+CONTROL_PACKET)/inum;
         succrate = (succrate*(inum-1)+SUCCRATE)/inum;
     end    
 end

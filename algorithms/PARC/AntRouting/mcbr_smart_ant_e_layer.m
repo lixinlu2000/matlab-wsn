@@ -2,8 +2,10 @@ function status = mcbr_smart_ant_e_layer(N, S)
 
 %* Copyright (C) 2003 PARC Inc.  All Rights Reserved.
 
+% Energy related FF protocol Improvement Implementation
 % Written by Ying Zhang, yzhang@parc.com, modified from Lukas Kuhn's code
 % Last modified: Feb. 17, 2004  by YZ
+% Last modified by xinlu 2017/08/23
 
 % DO NOT edit simulator code (lines that begin with S;)
 
@@ -49,6 +51,8 @@ persistent probGain
 persistent backDelayMin
 persistent backDelayRand
 
+persistent initPower
+
 switch event
 case 'Init_Application'
     if (ix==1)
@@ -83,12 +87,13 @@ case 'Init_Application'
     probability{ID} = [];
     memory = struct('average', 0, 'variance', 0, 'window', [],  'potentials', [], 'interval', antInterval);
     Set_Start_Clock(antStart); %start forward ant 
-case 'Send_Packet'
+    
+case 'Send_Packet'  % send packet
     
     try msgID = data.msgID; catch msgID = 0; end   
     try list = data.list; catch list = [];  end
     
-    if (msgID == -inf) %init packet
+    if (msgID == -inf) %send init backward packet
         if (isempty(memory.potentials)|| DESTINATIONS(ID))
             data.cost = mcbr_dest;
         else
@@ -96,15 +101,19 @@ case 'Send_Packet'
         end
     end
            
-    if (msgID == -2) %backward ant
+    if (msgID == -2) %send backward ant
         try
-            data.address = list(1);
+            data.address = list(1); %address of next hop
             data.list = list(2:length(list));
             PrintMessage(['<-', num2str(data.address')]);
         catch
             pass = 0;
         end
-    elseif (msgID == -1)  %forward ant
+    elseif (msgID == -1)  %send forward ant
+        %send the forward ant exploit the broadcast channel of wireless
+        %sensor networks. 
+        %TODO:
+        %introduce the Opportunistic Broadcast in our paper.
         data.list = [ID, list];
         data.address = 0; %broadcast       
     elseif (msgID >= 0) % data packet
@@ -149,15 +158,32 @@ case 'Packet_Received'
         try prob = probability{ID}(nID);
         catch probability{ID}(nID) = 0;
         end
-    else
+    else %init backward message from sink
+        %msgID == -inf, obtain the estimation of the cost to the
+        %destination from each of its neighbors according the init backward
+        %message from sink node. rdata.cost come from the send init
+        %backward function in line 100.
         memory.potentials(nID) = rdata.cost;
     end   
     
-    if (msgID == -1) %forward ant
-        if( DESTINATIONS(ID))
-            antBackward.msgID = -2;
-            antBackward.list = rdata.list;          
-            antBackward.cost = memory.average;
+    if (msgID == -1) %receive forward ant
+        if( DESTINATIONS(ID)) %arriving destination
+            antBackward.msgID = -2; %change to backward ant
+            antBackward.list = rdata.list;
+            
+            %calculate the pheromone increment according to the equation in
+            %eeabr. should be modified later.
+            %added by xinlu 2017/08/23
+            initPower = sim_params('get_app', 'InitPower');
+            antBackward.path_length = length(antBackward.list);
+            %path_length = length(antBackward.list);
+            [maxValue,minValue,avgValue] = max_min_avg_in_path(antBackward.list);
+            ph_increment = 1/(initPower - (minValue - antBackward.path_length)/(maxValue - antBackward.path_length));
+            ph_increment = exp(ph_increment); %avoid pheromone increment too low
+            
+            %antBackward.cost = memory.average;
+            antBackward.cost = ph_increment;
+            antBackward.ph_increment = ph_increment;
             
             %delay for some time to avoid collison at the destination
             status = mcbr_smart_ant_e_layer(N, make_event(t+backDelayMin+backDelayRand*rand, 'Send_Packet', ID, antBackward));
@@ -166,8 +192,16 @@ case 'Packet_Received'
         end
     end
            
-    if ((msgID == -2) && (~duplicated)) %backward ant
-        data.data.cost = rdata.cost + mcbr_cost;
+    if ((msgID == -2) && (~duplicated)) %receive backward ant
+        %calcualte the travelled distance by backward ant
+        %the phromenone increment need to be divided evenly in the list
+        %according to the distance to the destination.
+        tmp_list = 1:data.data.path_length;
+        tmp_sum = sum(tmp_list);
+        data.data.cost = rdata.ph_increment*(length(data.data.list)+1)/tmp_sum;
+        
+        %data.data.cost = rdata.cost + mcbr_cost;
+        
         if (isempty(memory.window))
             memory.average = data.data.cost;
             memory.window = [data.data.cost];
@@ -178,7 +212,8 @@ case 'Packet_Received'
             memory.window = memory.window(1:min(windowSize, length(memory.window)));
         end
         
-        Iinf = min(memory.window);
+        %Iinf = min(memory.window);
+        Iinf = max(memory.window);
         Isup = memory.average + z*sqrt(memory.variance/windowSize);
         r = c1*Iinf/data.data.cost;
         tmp = (Isup-Iinf) + (data.data.cost-Iinf);
@@ -187,6 +222,7 @@ case 'Packet_Received'
         end
         if (data.data.address==ID) %I am in the path, reinforce it
             probability{ID} = Set_New_Prob(probability{ID}, nID, rewardScale*r);
+            %probability{ID} = Set_New_Prob2(probability{ID}, nID, data.data.cost);
             if (~SOURCES(ID))          
                 status = mcbr_smart_ant_e_layer(N, make_event(t, 'Send_Packet', ID, data.data));
             else
@@ -197,13 +233,13 @@ case 'Packet_Received'
         end
     end
     
-    if (msgID >= 0) %data packet
-        if (DESTINATIONS(ID))
-            antBackward.msgID = -2;     
-            antBackward.cost = 0;
-            
-            status = mcbr_smart_ant_e_layer(N, make_event(t, 'Send_Packet', ID, antBackward));
-        end
+    if (msgID >= 0) %receive data packet
+%         if (DESTINATIONS(ID))
+%             antBackward.msgID = -2;     
+%             antBackward.cost = 0;
+%             
+%             status = mcbr_smart_ant_e_layer(N, make_event(t, 'Send_Packet', ID, antBackward));
+%         end
             
         if(~DESTINATIONS(ID) && (data.data.address == ID)) %forward if is for me
             status = mcbr_smart_ant_e_layer(N, make_event(t, 'Send_Packet', ID, data.data));
@@ -312,6 +348,19 @@ else
 	end
 end
 
+%another function to try, added by xinlu 2017/08/24
+function new = Set_New_Prob2(old,idx,ph)
+if (sum(old)==0)
+    old = ones(1,length(old))/length(old);
+end
+for i = 1:length(old)
+    if(i==idx)
+        new(i) = old(i) + ph;
+    else
+        new(i) = old(i) - 0.1 * old(i);
+    end
+end
+
 %another function to try
 function new = Set_New_Prob1(old, idx, r)
 
@@ -337,3 +386,18 @@ else
 	end
 end
 
+%get the max energy node in the path
+function [maxValue,minValue,avgValue] = max_min_avg_in_path(list)
+global ATTRIBUTES
+N = length(ATTRIBUTES);
+for i=1:N
+    power(i) = ATTRIBUTES{i}.power;
+end
+
+M = length(list);
+for i=1:M
+    list_energy(i) = power(list(i));
+end
+maxValue = max(list_energy);
+minValue = min(list_energy);
+avgValue = mean(list_energy);

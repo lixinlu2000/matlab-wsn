@@ -48,7 +48,8 @@ S; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv%
 
-global TIME LATENCY THROUGHPUT LOSSRATE SUCCRATE ENERGY ENERGY_VAR PACKET_SENT
+global TIME LATENCY THROUGHPUT LOSSRATE SUCCRATE ENERGY ENERGY_VAR PACKET_SENT 
+global CONTROL_PACKET % added by xinlu
 
 persistent logInterval
 persistent lastTotalSent
@@ -66,6 +67,7 @@ case 'Init_Application'
         ENERGY=[];
         ENERGY_VAR=[];
         PACKET_SENT=[];
+        CONTROL_PACKET=[];
         lastTotalSent = 0;
         
         bittime = sim_params('get','BIT_TIME');
@@ -88,13 +90,14 @@ case 'Clock_Tick'
         ENERGY = [ENERGY, sys_stat.Total_Energy_Used];
         ENERGY_VAR= [ENERGY_VAR, sys_stat.Energy_Used_diff];
         PACKET_SENT = [PACKET_SENT, sys_stat.Total_Packet_Sent];
+        CONTROL_PACKET = [CONTROL_PACKET,sys_stat.Control_Packets];
         if (sys_stat.Total_Packet_Sent == lastTotalSent) succRate = 0;
         else succRate = sys_stat.Total_Packet_Received/(sys_stat.Total_Packet_Sent-lastTotalSent);
         end
         SUCCRATE = [SUCCRATE, succRate];       
         Set_Log_Clock(logInterval);
         
-        disp(['sim time: ' num2str(t*bittime) '---------------'])
+        disp(['sim time: ' num2str(t*bittime)])
         %last interval
         disp(['latency: ' num2str(sys_stat.Average_Delays)])
         disp(['throughput: ' num2str(sys_stat.Total_Throughput)])
@@ -103,7 +106,8 @@ case 'Clock_Tick'
         %total to this time
         disp(['energy: ' num2str(sys_stat.Total_Energy_Used)])
         disp(['energy_var: ' num2str(sys_stat.Energy_Used_diff)])
-        disp(['packet_sent: ' num2str(sys_stat.Total_Packet_Sent)])      
+        disp(['packet_sent: ' num2str(sys_stat.Total_Packet_Sent)])
+        disp(['control packet: ' num2str(sys_stat.Control_Packets)]);
         
         %log to file as well
         [tag err]= sprintf(' %d\t %d/%d\t %.3f\t %.3f\t %.3f\t %d',...

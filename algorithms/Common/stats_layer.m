@@ -53,6 +53,7 @@ global RECEIVED_DELAYS
 global RECEIVED_LOST
 global SENT_TIMES
 global Packet_Sent_Count
+global Control_Sent_Count
 
 switch event
 case 'Init_Application'
@@ -62,6 +63,7 @@ case 'Init_Application'
     if (ix==1) 
         SENT_TIMES=[];
         Packet_Sent_Count=0;
+        Control_Sent_Count = 0; %added by xinlu
     end
 case 'Packet_Sent' %count the sent messages from this node only
     try msgID = data.data.msgID; catch msgID = 0; end
@@ -69,6 +71,10 @@ case 'Packet_Sent' %count the sent messages from this node only
         if ((~data.data.forward) && (msgID >= 0))
             Packet_Sent_Count = Packet_Sent_Count + 1;
             SENT_TIMES = [SENT_TIMES, t];
+        end
+        %added by xinlu, calculate the control packet
+        if(msgID < 0)
+            Control_Sent_Count = Control_Sent_Count + 1; 
         end
     end
 case 'Packet_Received'  

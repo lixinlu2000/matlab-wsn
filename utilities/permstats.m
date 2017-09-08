@@ -29,8 +29,9 @@ global RECEIVED_LOST
 global RECEIVED_TIMES
 global ATTRIBUTES
 global SENT_TIMES
+global Control_Sent_Count
 
-global Packet_Sent_Count TOTAL_SEND  routePkts
+global Packet_Sent_Count TOTAL_SEND
 
 [topology, mote_IDs]=prowler('GetTopologyInfo');
 N=length(mote_IDs);
@@ -99,7 +100,8 @@ sys_stat=struct(...
         'Total_Packet_Received',       0,  ...
         'Total_Energy_Used',           0,  ...
         'Energy_Used_diff',            0,  ...
-        'Total_Packet_Sent',           0 ...
+        'Total_Packet_Sent',           0, ...
+        'Control_Packets',             0 ...  %added by xinlu
         );
 
 Total_Energy_Used_sq = 0;
@@ -123,12 +125,13 @@ end
 
 %sys_stat.Total_Packet_Sent = Packet_Sent_Count;
 sys_stat.Total_Packet_Sent = TOTAL_SEND;
-try 
-    routePkts; 
-    sys_stat.Control_Packets = routePkts; 
-catch
-    sys_stat.Control_Packets = 0; 
-end
+sys_stat.Control_Packets = Control_Sent_Count;  %added by xinlu
+% try 
+%     routePkts; 
+%     sys_stat.Control_Packets = routePkts; 
+% catch
+%     sys_stat.Control_Packets = 0; 
+% end
 
 if (nOfD>0)
     sys_stat.Average_Delays = sys_stat.Average_Delays/nOfD;

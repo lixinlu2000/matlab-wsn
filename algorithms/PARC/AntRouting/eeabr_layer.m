@@ -60,7 +60,6 @@ persistent z
 persistent rewardScale
 persistent dataGain
 persistent initPower
-persistent path_length
 
 switch event
 case 'Init_Application'  % Initilize Application
@@ -180,7 +179,7 @@ case 'Packet_Received'
         end
     end
     
-    if (msgID == -1) %forward ant
+    if (msgID == -1) %receive forward ant
         if(DESTINATIONS(ID)) %arriving destination
             antBackward.msgID = -2; %change to backward ant
             antBackward.list = rdata.list;
@@ -190,9 +189,9 @@ case 'Packet_Received'
             %the length of the list, initial energy of node.
             %added by xinlu 2017/08/19
             initPower = sim_params('get_app', 'InitPower'); 
-            path_length = length(antBackward.list);
+            antBackward.path_length = length(antBackward.list);
             [maxValue,minValue,avgValue] = max_min_avg_in_path(antBackward.list);
-            ph_increment = 1/(initPower - (minValue - path_length)/(maxValue - path_length));
+            ph_increment = 1/(initPower - (minValue - antBackward.path_length)/(maxValue - antBackward.path_length));
             ph_increment = exp(ph_increment); %avoid pheromone increment too low
             
             %antBackward.cost = 0; %the original ant routing consider only
@@ -246,7 +245,7 @@ case 'Packet_Received'
         end
     end
     
-    if (msgID >= 0) %data packet
+    if (msgID >= 0) %receive data packet
         if(~DESTINATIONS(ID)) %forward
             status = eeabr_layer(N, make_event(t, 'Send_Packet', ID, data.data));
         end
