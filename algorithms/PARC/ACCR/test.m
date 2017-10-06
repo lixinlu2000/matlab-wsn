@@ -27,43 +27,45 @@ sim_params('set_app_default');
 sim_params('set_app','Xsize',N_num);
 sim_params('set_app','Ysize',N_num);
 
-sim_params('set_app','SourceType','static');
-sim_params('set_app', 'SourceCenterType', 'fixed');
-sim_params('set_app', 'SourceCenterX', 0);
-sim_params('set_app', 'SourceCenterY', 1);
-sim_params('set_app','SourceUnique',1);
-
 % sim_params('set_app','SourceType','static');
 % sim_params('set_app', 'SourceCenterType', 'fixed');
-% sim_params('set_app', 'SourceCenterX', N_num/2 - 1);
-% sim_params('set_app', 'SourceCenterY', N_num/2 - 1);
+% sim_params('set_app', 'SourceCenterX', 0);
+% sim_params('set_app', 'SourceCenterY', 1);
+% sim_params('set_app','SourceUnique',1);
+
+sim_params('set_app','SourceType','static');
+sim_params('set_app', 'SourceCenterType', 'fixed');
+sim_params('set_app', 'SourceCenterX', N_num/2 - 1);
+sim_params('set_app', 'SourceCenterY', N_num/2 - 1);
 % sim_params('set_app', 'SourceRadius', N_num/2 + 1);
-% sim_params('set_app','SourcePercentage',1);
-% sim_params('set_app','SourceUnique',0);
+sim_params('set_app', 'SourceRadius', N_num);
+sim_params('set_app','SourcePercentage',0.2);
+sim_params('set_app','SourceUnique',0);
 
 sim_params('set_app', 'DestinationType', 'static');
 sim_params('set_app', 'DestinationCenterType', 'fixed');
 sim_params('set_app', 'DestinationCenterX', N_num);
 sim_params('set_app', 'DestinationCenterY', N_num-1);
 
-sim_params('set_app', 'SourceRate', 1); %1 sec 1 msg, 0.1 = 10 sec 1 msg
+% sim_params('set_app', 'SourceRate', 1); %1 sec 1 msg, 0.1 = 10 sec 1 msg
+sim_params('set_app', 'SourceRate', 0.2);
 sim_params('set_app', 'RandSpeedDestination', 0);
 sim_params('set_app', 'RandSpeedSource', 0.00);
 
 InitTime = 10;
-Max_Sim_Time = 200;
-Number_of_Runs = 10;
+Max_Sim_Time = 300;
+Number_of_Runs = 5;
 Time_Interval = 10;
-dir=  'results/results1005';
+dir=  'results/results1006';
 TIME = 1:Time_Interval:(Max_Sim_Time + InitTime); 
 
 
-set_layers({'mac', 'neighborhood', 'accr_original', 'init_hello', 'app', 'stats'}); % for basic ant routing
+set_layers({'mac', 'neighborhood', 'ant_routing', 'init_hello', 'app', 'stats'}); % for basic ant routing
 %[delays1, throughput1, lossrate1, succrate1, energy1, energy_var1, sent1, control1] = routing_test_all(Max_Sim_Time, Number_of_Runs, Time_Interval);
 [delays1, throughput1, lossrate1, succrate1, energy1, energy_var1, sent1, control1] = routing_test(Max_Sim_Time + InitTime, Number_of_Runs, Time_Interval);
 X=[TIME;delays1;throughput1;lossrate1;succrate1;energy1;energy_var1;sent1;control1];
 %X=[delays1;throughput1;lossrate1;succrate1;energy1;energy_var1;sent1; control1];
-filename = [dir, '/accr_original.txt'];
+filename = [dir, '/ant_routing.txt'];
 fid = fopen(filename, 'w');
 fprintf(fid, '%d %f %f %f %f %d %f %d %d\n', X);
 fclose(fid);
