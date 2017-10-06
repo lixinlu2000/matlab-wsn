@@ -1,0 +1,10 @@
+accr_original.txt,eeabr.txt,ant_routing.txt:
+    N_num = 7;
+    InitTime = 10;
+    Max_Sim_Time = 300;
+    Number_of_Runs = 5;
+    Time_Interval = 10;
+    dir=  'results/results1006';
+    TIME = 1:Time_Interval:(Max_Sim_Time + InitTime); 
+
+accr_original2.txt,eeabr2.txt,ant_routing2.txt:
