@@ -1,4 +1,4 @@
-function status = ant_routing_layer(N, S)
+function status = accr_basic_layer(N, S)
 
 % Copyright (C) 2003 PARC Inc.  All Rights Reserved.
 % Define variables:
@@ -14,9 +14,6 @@ function status = ant_routing_layer(N, S)
 % rewardScale:       --learning rate, see equation 3.
 % DESTINATIONS:      --;
 % SOURCES:           --;
-
-% Written by Ying Zhang, yzhang@parc.com
-% Last modified: Feb. 17, 2004  by YZ
 
 % DO NOT edit simulator code (lines that begin with S;)
 
@@ -44,12 +41,12 @@ S; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv%
 
-%this implementation is based on AntNet by G. D. Caro and M. Dorigo
 
 global NEIGHBORS
 global DESTINATIONS
 global SOURCES
 
+%persistent PHEROMONE
 persistent antInterval
 persistent antStart
 persistent probability
@@ -59,15 +56,16 @@ persistent c1 c2
 persistent z
 persistent rewardScale
 persistent dataGain
+persistent initPower
 
 switch event
 case 'Init_Application'  % Initilize Application
     if (ix==1)
-        sim_params('set_app', 'Promiscuous', 0);
+        sim_params('set_app', 'Promiscuous', 0);   %unicast, if multicast, then Promiscuous = 1
         antStart = sim_params('get_app', 'AntStart');
         if (isempty(antStart)) 
-            antStart = 120000; %3 sec
-        end
+            antStart = 120000; % 3 sec
+        end 
         antRatio = sim_params('get_app', 'AntRatio');
         if (isempty(antRatio)) 
             antRatio = 2; % 1:2 control packets
@@ -78,7 +76,7 @@ case 'Init_Application'  % Initilize Application
         end 
         antInterval = antRatio*40000/sourceRate; 
         windowSize = sim_params('get_app', 'WindowSize');
-        if (isempty(windowSize)) 
+        if (isempty(windowSize))
             windowSize = 10; 
         end
         eta = min(5/windowSize, 1);  % see equation 1 in paper.
@@ -91,7 +89,7 @@ case 'Init_Application'  % Initilize Application
         if (isempty(z)) z = 1; end
         rewardScale = sim_params('get_app', 'RewardScale');
         if (isempty(rewardScale)) 
-            rewardScale = 0.3; 
+            rewardScale = 0.3;
         end
         dataGain = sim_params('get_app', 'DataGain');
         if (isempty(dataGain)) 
@@ -101,13 +99,19 @@ case 'Init_Application'  % Initilize Application
     probability{ID} = [];
     memory = struct('average', 0, 'variance', 0, 'window', [], 'interval', antInterval);
     Set_Start_Clock(antStart); %start forward ant 
-    
+%     PHEROMONE{ID} = [];
 case 'Send_Packet'   % Send packet
     
-    try msgID = data.msgID; catch msgID = 0; end   
-    try list = data.list; catch list = []; end
+    try msgID = data.msgID; 
+    catch
+        msgID = 0;
+    end
+    try list = data.list;
+    catch
+        list = []; 
+    end
     
-    if (msgID == -2) %backward ant, select the next hop according to list.
+    if (msgID == -2) %send backward ant, select the next hop according to list.
         try 
             data.address = list(1); %address of next hop
             data.list = list(2:length(list));
@@ -115,11 +119,13 @@ case 'Send_Packet'   % Send packet
         catch
             pass = 0;
         end
-    elseif (msgID == -1)  %forward ant 
-        data.list = [ID, list];
+    elseif (msgID == -1)  %send forward ant 
+        data.list = [ID, list];  %add current node into list
         if (~isempty(NEIGHBORS{ID})) %if there is neighbor
            RestNEIGHBORS = setdiff(NEIGHBORS{ID}, data.list);
-           if (isempty(RestNEIGHBORS)) RestNEIGHBORS = NEIGHBORS{ID}; end
+           if (isempty(RestNEIGHBORS)) 
+               RestNEIGHBORS = NEIGHBORS{ID}; 
+           end
            total = 0;
            for n = RestNEIGHBORS
                ndx = find(NEIGHBORS{ID}==n);
@@ -134,7 +140,7 @@ case 'Send_Packet'   % Send packet
                    if(prob <=0)
                       data.address = NEIGHBORS{ID}(ndx); %select next hop
                       PrintMessage(['->', num2str(data.address')]);
-                      data.width = 5*probability{ID}(ndx);
+                      %data.width = 5*probability{ID}(ndx);
                       inlist = find(data.list==data.address);
                       if (~isempty(inlist)) %there is loop
                           listsize = length(data.list);
@@ -172,39 +178,59 @@ case 'Send_Packet'   % Send packet
        end
     end
       
-case 'Packet_Received'
+case 'Packet_Received'  %receive packet
     rdata = data.data;
-    try msgID = rdata.msgID; catch msgID = 0; end
-    try list = rdata.list; catch list = []; end
+    try msgID = rdata.msgID; 
+    catch
+        msgID = 0;
+    end
+    try list = rdata.list; 
+    catch
+        list = [];
+    end
+    
     nID = find(NEIGHBORS{ID}==rdata.from); %nID denotes the index last node in neighbor list.
     
     data.data.forward = 1;
     
     pass=0;
     
-    if (msgID ~= -inf)
+    if (msgID ~= -inf)  %hello message
         try prob = probability{ID}(nID);
         catch probability{ID}(nID) = 0;
         end
     end
     
-    if (msgID == -1) % receive forward ant
+    if (msgID == -1) %receive forward ant
         if(DESTINATIONS(ID)) %arriving destination
             antBackward.msgID = -2; %change to backward ant
             antBackward.list = rdata.list;
+            initPower = sim_params('get_app', 'InitPower');
+            antBackward.path_length = length(antBackward.list);
+            [maxValue,minValue,avgValue] = max_min_avg_in_path(antBackward.list);
+            ph_tmp = 1/(initPower - (minValue - antBackward.path_length)/(avgValue - antBackward.path_length));
+            ph_increment = exp(ph_tmp); %avoid pheromone increment too low.
                         
+%             antBackward.cost = ph_increment;
             antBackward.cost = 0;
-            status = ant_routing_layer(N, make_event(t, 'Send_Packet', ID, antBackward));
+            antBackward.ph_increment = ph_increment;
+            
+            status = accr_basic_layer(N, make_event(t, 'Send_Packet', ID, antBackward));
         else
-            status = ant_routing_layer(N, make_event(t, 'Send_Packet', ID, data.data));
+            status = accr_basic_layer(N, make_event(t, 'Send_Packet', ID, data.data));
         end
     end
            
-    if (msgID == -2) %backward ant
+    if (msgID == -2) %receive backward ant
         %update average cost and variance according to equation 1 in paper.
         %cost be the current cost of the path from the destination to the
         %current node.
-        data.data.cost = rdata.cost + 1;
+%         data.data.cost = rdata.cost + 1;
+        tmp_list = 1:data.data.path_length;
+        tmp_sum = sum(tmp_list);
+        data.data.cost = rdata.ph_increment*(length(data.data.list)+1)/tmp_sum;
+        data.data.cost = 1/data.data.cost;
+        
         if (isempty(memory.window))
             memory.average = data.data.cost;
             %An observation window W of size M is kept for storing the cost
@@ -226,17 +252,19 @@ case 'Packet_Received'
         if (tmp>0)
             r = r + c2*(Isup-Iinf)/tmp;
         end
+        %probability{ID} = Set_New_Prob1(probability{ID}, nID, data.data.cost); 
         probability{ID} = Set_New_Prob(probability{ID}, nID, rewardScale*r); %rewardScale:learning rate
         if (~SOURCES(ID))  %do not arrive source node ,continue to forward backward ant            
-            status = ant_routing_layer(N, make_event(t, 'Send_Packet', ID, data.data));
+            status = accr_basic_layer(N, make_event(t, 'Send_Packet', ID, data.data));
         else %reach source node, calculate interval
-            memory.interval = memory.interval*exp(r-0.5); %adaptively set the interval
+            %memory.interval = memory.interval*exp(r-0.5); %adaptively set the interval
+            memory.interval = memory.interval*exp(1-0.5); %adaptively set the interval
         end
     end
     
     if (msgID >= 0) %data packet
         if(~DESTINATIONS(ID)) %forward
-            status = ant_routing_layer(N, make_event(t, 'Send_Packet', ID, data.data));
+            status = accr_basic_layer(N, make_event(t, 'Send_Packet', ID, data.data));
         end
     end
     
@@ -247,13 +275,17 @@ case 'Packet_Received'
 case 'Clock_Tick'
     try type = data.type; catch type = 'none'; end
     if (strcmp(type, 'ant_start'))
+%         if (isempty(PHEROMONE{ID}))
+%             %pheromone initialization
+%             PHEROMONE{ID} = ones(1,length(NEIGHBORS{ID}));
+%         end
         if (isempty(probability{ID}))
             %probability initialization
             probability{ID} = ones(1, length(NEIGHBORS{ID}))/length(NEIGHBORS{ID});
         end
         if(SOURCES(ID))
             antForward.msgID = -1;
-            status = ant_routing_layer(N, make_event(t+4000, 'Send_Packet', ID, antForward));            
+            status = accr_basic_layer(N, make_event(t+4000, 'Send_Packet', ID, antForward));            
         end
         Set_Start_Clock(t+memory.interval);
         pass =0;
@@ -319,4 +351,32 @@ for i=1:length(old)
 end
 
 
+%ACCR probability updation manner, added by xinlu 2017/08/25
+function new = Set_New_Prob1(old,idx,ph)
+if (sum(old)==0)
+    old = ones(1,length(old))/length(old);
+end
+for i = 1:length(old)
+    if(i==idx)
+        new(i) = old(i) + ph;
+    else
+        new(i) = old(i) - 0.1 * old(i);
+    end
+end
 
+function new = Set_New_PH(old,idx,ph)
+if(sum(old)==0)
+    old = ones(1,length(old))/length(old);
+end
+for i =1:length(old)
+    if(i==idx)
+        new(i) = old(i) + ph;
+    else
+        new(i) = old(i) - 0.1 * old(i);
+    end
+end
+
+function new = Set_New_Prob2
+global PHEROMONE ID
+total = sum(PHEROMONE{ID});
+new = PHEROMONE{ID}/total;

@@ -73,6 +73,7 @@ case 'Clock_Tick'
             if (~isempty(maxhops))
                 dest.maxhops = maxhops;
             end
+            %dest.info = 'it is a test from backward layer.';
             status = init_backward_layer(N, make_event(t, 'Send_Packet', ID, dest));
             hello_times = hello_times - 1;
             if (hello_times>0) Set_Dest_Clock(t+clock_interval);end

@@ -42,6 +42,7 @@ S; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv%
+global Control_Sent_Count
 
 persistent clock_interval
 persistent hello_times
@@ -50,6 +51,7 @@ switch event
 case 'Init_Application'
     
     if (ix==1)
+        Control_Sent_Count = 0;
         clock_interval = sim_params('get_app', 'InitInterval');
         if (isempty(clock_interval)) clock_interval = 20000; end    %0.5 second
         hello_times = sim_params('get_app', 'InitNofTimes');
@@ -61,7 +63,7 @@ case 'Init_Application'
     Set_Hello_Clock(100*rand*length(mote_IDs)); %nodes start at random time to avoid collapse
     
 case 'Packet_Received'
-    
+    % do not forward hello message, when receive hello message
     try msgID = data.data.msgID; catch msgID = 0; end
     if (msgID<0) pass = 0; end
 
@@ -77,6 +79,8 @@ case 'Clock_Tick'
       
       hello.msgID = -inf;
       hello.address = 0;
+      Control_Sent_Count = Control_Sent_Count + 1;
+      %hello.info = 'it is a test from hello layer.';
       status = init_hello_layer(N, make_event(t, 'Send_Packet', ID, hello));
       pass = 0;
     end

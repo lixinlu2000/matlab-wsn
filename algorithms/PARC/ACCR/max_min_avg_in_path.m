@@ -1,4 +1,5 @@
 %get the max energy node in the path
+%written by xinlu 
 function [maxValue,minValue,avgValue] = max_min_avg_in_path(list)
 global ATTRIBUTES
 N = length(ATTRIBUTES);

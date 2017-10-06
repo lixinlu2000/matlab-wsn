@@ -1,4 +1,4 @@
-function [latency, throughput, lossrate, succrate, energy, energy_var, packet_sent] = test(varargin)
+function [latency, throughput, lossrate, succrate, energy, energy_var, packet_sent, control] = test(varargin)
 
 %* Copyright (C) 2003 PARC Inc.  All Rights Reserved.
 %*
@@ -22,7 +22,7 @@ function [latency, throughput, lossrate, succrate, energy, energy_var, packet_se
 % Written by Lukas D. Kuhn, lukas.kuhn@parc.com
 % Last modified: May 27, 2004  by YZ
 
-global LATENCY THROUGHPUT LOSSRATE SUCCRATE ENERGY ENERGY_VAR PACKET_SENT
+global LATENCY THROUGHPUT LOSSRATE SUCCRATE ENERGY ENERGY_VAR PACKET_SENT CONTROL_PACKET
 
 Max_Sim_Time = varargin{1};
 Number_of_Runs = varargin{2};
@@ -47,6 +47,7 @@ for (inum=1:Number_of_Runs)
     energy_var(inum, :) = ENERGY_VAR;
     packet_sent(inum, :) = PACKET_SENT;
     succrate(inum, :) = SUCCRATE;
+    control(inum, :) = CONTROL_PACKET;
     
 end
 
