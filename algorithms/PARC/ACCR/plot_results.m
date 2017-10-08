@@ -1,6 +1,6 @@
 function plot_results
 clear;
-list={'ant_routing','accr_original','eeabr'};
+list={'ant_routing2','accr_original2','eeabr2'};
 resultdir = 'results/results1006';
 num_node = 49;          %the number of node in networks.
 node_Interval = 10;     %the point number in x-coordinate;
@@ -41,7 +41,7 @@ ylabel('Latency');
 
 % legend(list{1},list{2},list{3});
 legend('ant\_routing','accr\_original','eeabr');
-figurename=[resultdir,'/latency.fig'];
+figurename=[resultdir,'/latency2.fig'];
 saveas(h,figurename);
 
 %% plot the Throughput
@@ -58,7 +58,7 @@ ylabel('Throughput');
 
 % legend(list{1},list{2},list{3});
 legend('ant\_routing','accr\_original','eeabr');
-figurename=[resultdir,'/throughput.fig'];
+figurename=[resultdir,'/throughput2.fig'];
 saveas(h,figurename);
 
 %% plot the Success Rate
@@ -75,7 +75,7 @@ ylabel('Success Rate');
 
 % legend(list{1},list{2},list{3});
 legend('ant\_routing','accr\_original','eeabr');
-figurename=[resultdir,'/succrate.fig'];
+figurename=[resultdir,'/succrate2.fig'];
 saveas(h,figurename);
 
 %% plot the Energy Consumption
@@ -92,7 +92,7 @@ ylabel('Energy Consumption');
 
 % legend(list{1},list{2},list{3});
 legend('ant\_routing','accr\_original','eeabr');
-figurename=[resultdir,'/energy.fig'];
+figurename=[resultdir,'/energy2.fig'];
 saveas(h,figurename);
 
 %% plot the Energy Efficiency
@@ -109,7 +109,7 @@ ylabel('Energy Efficiency');
 
 % legend(list{1},list{2},list{3});
 legend('ant\_routing','accr\_original','eeabr');
-figurename=[resultdir,'/energy_var.fig'];
+figurename=[resultdir,'/energy_var2.fig'];
 saveas(h,figurename);
 
 %% plot the Lifetime Prediction
@@ -126,7 +126,7 @@ ylabel('Lifetime Prediction');
 
 % legend(list{1},list{2},list{3});
 legend('ant\_routing','accr\_original','eeabr');
-figurename=[resultdir,'/lifetime.fig'];
+figurename=[resultdir,'/lifetime2.fig'];
 saveas(h,figurename);
 
 %% plot the Energy Standard Deviation
@@ -143,7 +143,7 @@ ylabel('Energy Standard Deviation');
 
 % legend(list{1},list{2},list{3});
 legend('ant\_routing','accr\_original','eeabr');
-figurename=[resultdir,'/energy_var.fig'];
+figurename=[resultdir,'/energy_var2.fig'];
 saveas(h,figurename);
 
 %% plot the Control Overhead
@@ -160,5 +160,5 @@ ylabel('Control Packet Overhead');
 
 % legend(list{1},list{2},list{3});
 legend('ant\_routing','accr\_original','eeabr');
-figurename=[resultdir,'/control.fig'];
+figurename=[resultdir,'/control2.fig'];
 saveas(h,figurename);

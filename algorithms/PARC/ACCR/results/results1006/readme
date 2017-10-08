@@ -15,3 +15,20 @@ accr_original2.txt,eeabr2.txt,ant_routing2.txt:
     Time_Interval = 10;
     dir=  'results/results1006';
     TIME = 1:Time_Interval:(Max_Sim_Time + InitTime); 
+
+sim_params('set_app','SourceType','static');
+sim_params('set_app', 'SourceCenterType', 'fixed');
+sim_params('set_app', 'SourceCenterX', N_num/2 - 1);
+sim_params('set_app', 'SourceCenterY', N_num/2 - 1);
+sim_params('set_app', 'SourceRadius', N_num);
+sim_params('set_app','SourcePercentage',0.2);
+sim_params('set_app','SourceUnique',0);
+
+sim_params('set_app', 'DestinationType', 'static');
+sim_params('set_app', 'DestinationCenterType', 'fixed');
+sim_params('set_app', 'DestinationCenterX', N_num);
+sim_params('set_app', 'DestinationCenterY', N_num-1);
+
+sim_params('set_app', 'SourceRate', 0.2);
+sim_params('set_app', 'RandSpeedDestination', 0);
+sim_params('set_app', 'RandSpeedSource', 0.00);
