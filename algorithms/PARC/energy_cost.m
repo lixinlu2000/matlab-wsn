@@ -29,6 +29,7 @@ k=0.2;
 
 out = k*ATTRIBUTES{ID}.power/maxpower+1-k;
 
+% maxpower function return the maximum power in the neworks
 function out=maxpower
 global ATTRIBUTES
 

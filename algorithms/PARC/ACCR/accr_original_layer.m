@@ -97,6 +97,7 @@ case 'Send_Packet'   % Send packet Command
     if(msgID < 0 )  %count the number of control packet, including hello message, init_backward message, forward and backward ant agents.
         Control_Sent_Count = Control_Sent_Count + 1;
     end
+    
     if (msgID == -2) %send backward ant, select the next hop according to list.
         try 
             data.address = list(1); %address of next hop

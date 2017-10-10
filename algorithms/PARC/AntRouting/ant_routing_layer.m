@@ -49,6 +49,7 @@ S; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 global NEIGHBORS
 global DESTINATIONS
 global SOURCES
+global Control_Sent_Count
 
 persistent antInterval
 persistent antStart
@@ -96,7 +97,8 @@ case 'Init_Application'  % Initilize Application
         dataGain = sim_params('get_app', 'DataGain');
         if (isempty(dataGain)) 
             dataGain = 1.2; 
-        end      
+        end
+        Control_Sent_Count = 0;
     end
     probability{ID} = [];
     memory = struct('average', 0, 'variance', 0, 'window', [], 'interval', antInterval);
@@ -106,6 +108,10 @@ case 'Send_Packet'   % Send packet
     
     try msgID = data.msgID; catch msgID = 0; end   
     try list = data.list; catch list = []; end
+    
+    if(msgID < 0 )  %count the number of control packet, including hello message, init_backward message, forward and backward ant agents.
+        Control_Sent_Count = Control_Sent_Count + 1;
+    end
     
     if (msgID == -2) %backward ant, select the next hop according to list.
         try 

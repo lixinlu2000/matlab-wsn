@@ -26,7 +26,7 @@ global ATTRIBUTES
 global DESTINATIONS
 global ID
 
-dest = find(DESTINATIONS);
+dest = find(DESTINATIONS);  %find the index of destination node. could be multiple destination. by xinlu
 x=[];
 y=[];
 for i=dest
@@ -40,7 +40,7 @@ y = mean(y);
 myX = ATTRIBUTES{ID}.x;
 myY = ATTRIBUTES{ID}.y;
 
-R = 2.5;
+R = 2.5; %?
 
 %out = max(abs(x-myX), abs(y-myY))/R;
-out = sqrt((x-myX)*(x-myX)+(y-myY)*(y-myY))/R;
+out = sqrt((x-myX)*(x-myX)+(y-myY)*(y-myY))/R; % distance / 2.5 ?

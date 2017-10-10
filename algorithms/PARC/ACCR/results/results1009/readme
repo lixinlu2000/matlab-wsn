@@ -1,0 +1,70 @@
+accr_original ant_routing mcbr_ant
+case 1:
+N_num = 7;
+% set the default simualtion parameter
+sim_params('set_default') 
+sim_params('set','APP_NAME','Rmase') % set the APP_NAME
+
+%  set application default parameter
+sim_params('set_app_default');
+
+sim_params('set_app','Xsize',N_num);
+sim_params('set_app','Ysize',N_num);
+
+sim_params('set_app','SourceType','static');
+sim_params('set_app', 'SourceCenterType', 'fixed');
+sim_params('set_app', 'SourceCenterX', 0);
+sim_params('set_app', 'SourceCenterY', 1);
+sim_params('set_app','SourceUnique',1);
+
+sim_params('set_app', 'DestinationType', 'static');
+sim_params('set_app', 'DestinationCenterType', 'fixed');
+sim_params('set_app', 'DestinationCenterX', N_num);
+sim_params('set_app', 'DestinationCenterY', N_num-1);
+
+sim_params('set_app', 'SourceRate', 0.2);
+sim_params('set_app', 'RandSpeedDestination', 0);
+sim_params('set_app', 'RandSpeedSource', 0.00);
+
+Max_Sim_Time = 300;
+Number_of_Runs = 1;
+Time_Interval = 10;
+dir=  'results/results1009';
+TIME = 1:Time_Interval:(Max_Sim_Time); 
+
+case 2: 
+
+N_num = 7;
+% set the default simualtion parameter
+sim_params('set_default') 
+sim_params('set','APP_NAME','Rmase') % set the APP_NAME
+
+%  set application default parameter
+sim_params('set_app_default');
+
+sim_params('set_app','Xsize',N_num);
+sim_params('set_app','Ysize',N_num);
+
+sim_params('set_app','SourceType','static');
+sim_params('set_app', 'SourceCenterType', 'fixed');
+sim_params('set_app', 'SourceCenterX', N_num/2 - 1);
+sim_params('set_app', 'SourceCenterY', N_num/2 - 1);
+sim_params('set_app', 'SourceRadius', N_num);
+sim_params('set_app','SourcePercentage',0.4);
+sim_params('set_app','SourceUnique',0);
+
+sim_params('set_app', 'DestinationType', 'static');
+sim_params('set_app', 'DestinationCenterType', 'fixed');
+sim_params('set_app', 'DestinationCenterX', N_num);
+sim_params('set_app', 'DestinationCenterY', N_num-1);
+
+sim_params('set_app', 'SourceRate', 0.2);
+sim_params('set_app', 'RandSpeedDestination', 0);
+sim_params('set_app', 'RandSpeedSource', 0.00);
+
+% InitTime = 10;
+Max_Sim_Time = 300;
+Number_of_Runs = 1;
+Time_Interval = 10;
+dir=  'results/results1009';
+TIME = 1:Time_Interval:(Max_Sim_Time); 

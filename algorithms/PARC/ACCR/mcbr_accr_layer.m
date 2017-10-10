@@ -4,26 +4,19 @@ function status = mcbr_accr_layer(N, S)
 % according to the Sensor-driven Cost aware Ant Routing(SC) protocol.
 
 % Written by Xinlu, xinlu.li@mydit.ie 09/10/2017
-% Last modified: 09/10/2017 by xinlu
+% Last modified: 10/10/2017 by xinlu
 
 %* Copyright (C) 2003 PARC Inc.  All Rights Reserved.
 % Define variables:
 % antInterval:       --time interval of ant agent;
 % antStart:          --start time, default value is 3 second;
-% sourceRate:        --源节点数据发送率，默认值=0.1，即10 sec 1 msg；
+% sourceRate:        --data generation rate in source node, default value =0.1 10 sec 1 msg
 % antRatio:
-% c1,c2,z:           --计算reward(r)的系数，参考公式3.
 % dataGain:          --the data ants are prevented from choosing links with very low
-%                      probability by remapping p to p^dataGain, dataGain>1, default value = 1.2
-% probGain:          --default value = 1.2
-% eta:               --系数，参考公式1
 % probability:
-% rewardScale:       --learning rate， see equation 3.
-% DESTINATIONS:       --目的节点向量，值为1，表示目的节点;
-% SOURCES：           --源节点向量，值为1，表示目的节点;
+% DESTINATIONS: 
+% SOURCES:
 
-% Written by Ying Zhang, yzhang@parc.com
-% Last modified: Feb. 17, 2004  by YZ
 
 % DO NOT edit simulator code (lines that begin with S;)
 
@@ -54,6 +47,7 @@ S; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 global NEIGHBORS
 global DESTINATIONS
 global SOURCES
+global Control_Sent_Count
 
 persistent antInterval
 persistent antStart
@@ -74,7 +68,7 @@ persistent statistics
 
 
 switch event
-case 'Init_Application'  % Initilize Application
+case 'Init_Application'  % Initilize Application Event
     if (ix==1)
         sim_params('set_app', 'Promiscuous', 0);
         antStart = sim_params('get_app', 'AntStart');
@@ -113,12 +107,16 @@ case 'Init_Application'  % Initilize Application
    
     Set_Start_Clock(antStart); %start forward ant 
     
-case 'Send_Packet' % Send packet 
+case 'Send_Packet' % Send packet Command
     
     try msgID = data.msgID; catch msgID = 0; end   
     try list = data.list; catch list = [];  end
     
-    if (msgID == -inf) % packet from init backward
+    if(msgID < 0 )  %count the number of control packet, including hello message, init_backward message, forward and backward ant agents.
+        Control_Sent_Count = Control_Sent_Count + 1;
+    end
+    
+    if (msgID == -inf) % packet from init_backward layer
         %TODO:
         if (isempty(memory.potentials) || DESTINATIONS(ID))
             data.cost = mcbr_dest; %mcbr_dest is function
@@ -194,7 +192,7 @@ case 'Send_Packet' % Send packet
        end
     end
         
-case 'Packet_Received'
+case 'Packet_Received' % Packet_Received Event
     rdata = data.data;
     try msgID = rdata.msgID; catch msgID = 0; end
     try list = rdata.list; catch list = []; end
@@ -269,7 +267,7 @@ case 'Packet_Received'
         pass =1;
     end
     
-case 'Clock_Tick'
+case 'Clock_Tick' % Clock Tick Event
     try type = data.type; catch type = 'none'; end
     if (strcmp(type, 'ant_start'))
         if (isempty(probability{ID}))  %see equation 4 in paper

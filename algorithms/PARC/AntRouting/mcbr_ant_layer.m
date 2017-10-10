@@ -4,17 +4,17 @@ function status = mcbr_ant_layer(N, S)
 % Define variables:
 % antInterval:       --time interval of ant agent;
 % antStart:          --start time, default value is 3 second;
-% sourceRate:        --Ô´½ÚµãÊý¾Ý·¢ËÍÂÊ£¬Ä¬ÈÏÖµ=0.1£¬¼´10 sec 1 msg£»
+% sourceRate:        --Ô´ï¿½Úµï¿½ï¿½ï¿½ï¿½Ý·ï¿½ï¿½ï¿½ï¿½Ê£ï¿½Ä¬ï¿½ï¿½Öµ=0.1ï¿½ï¿½ï¿½ï¿½10 sec 1 msgï¿½ï¿½
 % antRatio:
-% c1,c2,z:           --¼ÆËãreward(r)µÄÏµÊý£¬²Î¿¼¹«Ê½3.
+% c1,c2,z:           --ï¿½ï¿½ï¿½ï¿½reward(r)ï¿½ï¿½Ïµï¿½ï¿½ï¿½ï¿½ï¿½Î¿ï¿½ï¿½ï¿½Ê½3.
 % dataGain:          --the data ants are prevented from choosing links with very low
 %                      probability by remapping p to p^dataGain, dataGain>1, default value = 1.2
 % probGain:          --default value = 1.2
-% eta:               --ÏµÊý£¬²Î¿¼¹«Ê½1
+% eta:               --Ïµï¿½ï¿½ï¿½ï¿½ï¿½Î¿ï¿½ï¿½ï¿½Ê½1
 % probability:
-% rewardScale:       --learning rate£¬ see equation 3.
-% DESTINATIONS:       --Ä¿µÄ½ÚµãÏòÁ¿£¬ÖµÎª1£¬±íÊ¾Ä¿µÄ½Úµã;
-% SOURCES£º           --Ô´½ÚµãÏòÁ¿£¬ÖµÎª1£¬±íÊ¾Ä¿µÄ½Úµã;
+% rewardScale:       --learning rateï¿½ï¿½ see equation 3.
+% DESTINATIONS:       --Ä¿ï¿½Ä½Úµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÖµÎª1ï¿½ï¿½ï¿½ï¿½Ê¾Ä¿ï¿½Ä½Úµï¿½;
+% SOURCESï¿½ï¿½           --Ô´ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÖµÎª1ï¿½ï¿½ï¿½ï¿½Ê¾Ä¿ï¿½Ä½Úµï¿½;
 
 % Written by Ying Zhang, yzhang@parc.com
 % Last modified: Feb. 17, 2004  by YZ
@@ -51,6 +51,7 @@ S; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 global NEIGHBORS
 global DESTINATIONS
 global SOURCES
+global Control_Sent_Count
 
 persistent antInterval
 persistent antStart
@@ -88,6 +89,8 @@ case 'Init_Application'  % Initilize Application
         if (isempty(dataGain)) dataGain = 1.2; end
         probGain = sim_params('get_app', 'ProbGain');
         if (isempty(probGain)) probGain = 1.2; end
+        
+        Control_Sent_Count = 0;
     end
     probability{ID} = [];
     memory = struct('average', 0, 'variance', 0, 'window', [], 'potentials', [], 'interval', antInterval);
@@ -98,6 +101,10 @@ case 'Send_Packet' % Send packet
     
     try msgID = data.msgID; catch msgID = 0; end   
     try list = data.list; catch list = [];  end
+    
+    if(msgID < 0 )  %count the number of control packet, including hello message, init_backward message, forward and backward ant agents.
+        Control_Sent_Count = Control_Sent_Count + 1;
+    end
     
     if (msgID == -inf) %init packet
         if (isempty(memory.potentials) || DESTINATIONS(ID))
