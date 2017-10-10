@@ -44,6 +44,7 @@ S; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 global NEIGHBORS
 global DESTINATIONS
 global SOURCES
+global Control_Sent_Count
 
 persistent antInterval
 persistent antStart
@@ -56,7 +57,7 @@ persistent s_index
 persistent statistics
 
 switch event
-case 'Init_Application'  % Initilize Application
+case 'Init_Application'  % Initilize Application Event
     if (ix==1)
         sim_params('set_app', 'Promiscuous', 0);
         antStart = sim_params('get_app', 'AntStart');
@@ -72,6 +73,7 @@ case 'Init_Application'  % Initilize Application
             sourceRate = 0.1; %10 sec 1 msg
         end 
         antInterval = antRatio*40000/sourceRate; 
+        Control_Sent_Count = 0;
     end
     
     probability{ID} = [];
@@ -87,16 +89,14 @@ case 'Init_Application'  % Initilize Application
     
     Set_Start_Clock(antStart); %start forward ant 
     
-case 'Send_Packet'   % Send packet
+case 'Send_Packet'   % Send packet Command
     
     try msgID = data.msgID; catch msgID = 0; end   
     try list = data.list; catch list = []; end
     
-%     if (msgID == -inf)
-%         % verify the data from init_hello_layer, just for debug.
-%         disp('just for debug.');
-%     end
-
+    if(msgID < 0 )  %count the number of control packet, including hello message, init_backward message, forward and backward ant agents.
+        Control_Sent_Count = Control_Sent_Count + 1;
+    end
     if (msgID == -2) %send backward ant, select the next hop according to list.
         try 
             data.address = list(1); %address of next hop
@@ -165,7 +165,7 @@ case 'Send_Packet'   % Send packet
        end
     end
       
-case 'Packet_Received'
+case 'Packet_Received'  % Packet Received Event
     rdata = data.data;
     try msgID = rdata.msgID; catch msgID = 0; end
     try list = rdata.list; catch list = []; end
@@ -215,7 +215,7 @@ case 'Packet_Received'
             
             s_index{rdata.generate}.sdx_id = s_index{rdata.generate}.sdx_id + 1;
                        
-            status = accr_original_layer(N, make_event(t, 'Send_Packet', ID, antBackward));
+            status = accr_original_layer(N, make_event(t, 'Send_Packet', ID, antBackward));  %call Send_Packet Command
         else
             status = accr_original_layer(N, make_event(t, 'Send_Packet', ID, data.data));
         end
@@ -263,7 +263,7 @@ case 'Packet_Received'
         pass =1;
     end
     
-case 'Clock_Tick'
+case 'Clock_Tick'  % Clock_Tick Event
     try type = data.type; catch type = 'none'; end
     if (strcmp(type, 'ant_start'))
         if(isempty(pheromone{ID}))

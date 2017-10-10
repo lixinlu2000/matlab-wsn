@@ -52,7 +52,7 @@ case 'Packet_Received'
     rdata = data.data;    
     idx = find(NEIGHBORS{ID}==rdata.from);    
     %adjust min_fading according to neighbors
-    if (isempty(idx))   % Èç¹ûdata.from²»ÔÚneighbor list ÖÐ£¬insert it.
+    if (isempty(idx))   % ï¿½ï¿½ï¿½data.fromï¿½ï¿½ï¿½ï¿½neighbor list ï¿½Ð£ï¿½insert it.
         NEIGHBORS{ID} = [NEIGHBORS{ID}, rdata.from];
         RTIMES{ID} = [RTIMES{ID}, t];
         RSTRENGTHS{ID} = [RSTRENGTHS{ID}, data.signal_strength];

@@ -42,7 +42,6 @@ S; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv%
-global Control_Sent_Count
 
 persistent clock_interval
 persistent hello_times
@@ -51,7 +50,6 @@ switch event
 case 'Init_Application'
     
     if (ix==1)
-        Control_Sent_Count = 0;
         clock_interval = sim_params('get_app', 'InitInterval');
         if (isempty(clock_interval)) clock_interval = 20000; end    %0.5 second
         hello_times = sim_params('get_app', 'InitNofTimes');
@@ -79,7 +77,6 @@ case 'Clock_Tick'
       
       hello.msgID = -inf;
       hello.address = 0;
-      Control_Sent_Count = Control_Sent_Count + 1;
       %hello.info = 'it is a test from hello layer.';
       status = init_hello_layer(N, make_event(t, 'Send_Packet', ID, hello));
       pass = 0;

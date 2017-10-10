@@ -59,7 +59,7 @@ case 'Packet_Received'
     end
         
     if (~DESTINATIONS(ID) || msgID < 0)
-        pass = 0;
+        pass = 0;  %do not send this packet to upper layer (app layer)
     end
     
 case 'Clock_Tick'
