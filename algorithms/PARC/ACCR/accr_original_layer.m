@@ -1,6 +1,6 @@
 function status = accr_original_layer(N, S)
 
-% This implementation is disgned for origianl ACCR ant routing protocol discribed in ACCR.
+% This implementation is disigned for origianl ACCR ant routing protocol discribed in ACCR.
 % 
 % Written by Xinlu Li, xinlu.li@mydit.ie 02/10/2017
 % Last modified: 2017/10/02  by Xinlu
@@ -72,7 +72,6 @@ case 'Init_Application'  % Initilize Application
             sourceRate = 0.1; %10 sec 1 msg
         end 
         antInterval = antRatio*40000/sourceRate; 
-   
     end
     
     probability{ID} = [];
@@ -143,7 +142,7 @@ case 'Send_Packet'   % Send packet
            end
         end
     end
-   if (msgID >= 0) % data packet
+    if (msgID >= 0) % send data packet
        try
            total = 0;
            for ndx = 1:length(NEIGHBORS{ID})
@@ -256,6 +255,7 @@ case 'Packet_Received'
         if(~DESTINATIONS(ID)) %forward
             status = accr_original_layer(N, make_event(t, 'Send_Packet', ID, data.data));
         end
+        
     end
     
     if ((DESTINATIONS(ID) && msgID >= 0) || (msgID == -inf))
