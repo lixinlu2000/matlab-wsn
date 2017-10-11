@@ -84,7 +84,7 @@ case 'Init_Application'  % Initilize Application Event
     statistics{ID} = struct('generate',ID,'destination',0,'ant_id',0,'hops',0,'avgValue',0,'minValue',0,'maxValue',0,'ph_increment',0); %store the statistics information for each node
     
     initPower = sim_params('get_app','InitPower');
-    evaporation = 0.1;
+    evaporation = 0.3;
     memory = struct('interval',antInterval);
     
     Set_Start_Clock(antStart); %start forward ant 
@@ -195,8 +195,8 @@ case 'Packet_Received'  % Packet Received Event
             antBackward.generate = rdata.generate;
             [maxValue,minValue,avgValue] = max_min_avg_in_path(antBackward.list);
             fant_length = length(antBackward.list);
-%             phermone_increment = (minValue/((initPower-avgValue)*fant_length))/initPower;
-            phermone_increment = (initPower * avgValue)/(initPower * initPower * fant_length);
+%             antBackward.path_length = fant_length;
+            phermone_increment = (minValue/((initPower-avgValue)*fant_length))/initPower;
 %             antBackward.ph_increment = phermone_increment;
             antBackward.ant_id = rdata.ant_id;
             
@@ -234,18 +234,12 @@ case 'Packet_Received'  % Packet Received Event
         tmp_pheromone = tmp_statistics([tmp_statistics.ant_id] == tmp_ant_id).ph_increment;
         
         ph_pheromone = tmp_pheromone * (length(rdata.list) + 1) / tmp_sum;
-        % ph_pheromone shoud be in [0,1]
         
-        %update pheromone value
         pheromone{ID} =  Set_New_PH(pheromone{ID},nID,ph_pheromone,evaporation);
-        %normalized pheromone trail to [0,1]
-%          pheromone{ID} = normalization( pheromone{ID});
-         
+        
         %updata heuristic value
         avg_Value = tmp_statistics([tmp_statistics.ant_id] == tmp_ant_id).avgValue;
         heuristic{ID} = Set_New_HE(initPower,avg_Value);
-        %  normalized heruistic value to [0,1]
-        heuristic{ID}=normalization(heuristic{ID});
         
         probability{ID} = Set_New_Prob2(pheromone{ID},heuristic{ID});
         
@@ -275,11 +269,11 @@ case 'Clock_Tick'  % Clock_Tick Event
     if (strcmp(type, 'ant_start'))
         if(isempty(pheromone{ID}))
             % pheromone initialization
-            pheromone{ID} = ones(1, length(NEIGHBORS{ID}))/length(NEIGHBORS{ID});
+            pheromone{ID} = ones(1, length(NEIGHBORS{ID}))/10;
         end
         if(isempty(heuristic{ID}))
             % heuristic initialization
-            heuristic{ID} = ones(1, length(NEIGHBORS{ID}))/length(NEIGHBORS{ID});
+            heuristic{ID} = ones(1,length(NEIGHBORS{ID}));
         end
         if (isempty(probability{ID}))
             %probability initialization
@@ -343,19 +337,17 @@ prowler('InsertEvents2Q', make_event(alarm_time, 'Clock_Tick', ID, clock));
 
 % writen by xinlu 
 % update pheromone trail
-% last modified by xinlu 11/10/2017
 function new = Set_New_PH(old,idx,ph,evaporation)
-% if(sum(old)==0)
-%     old = ones(1,length(old))/length(old);
-% end
+if(sum(old)==0)
+    old = ones(1,length(old))/length(old);
+end
 for i =1:length(old)
     if(i==idx)
-        new(i) = (1-evaporation) * old(i) + evaporation * ph; %positive reinforcement + evaporation
+        new(i) = (1-evaporation) * old(i) + ph; %positive reinforcement + evaporation
     else
         new(i) = (1-evaporation) * old(i); %decrease by evaporation
     end
 end
-
 
 % wirten by xinlu 2017/10/02
 % update the heuristic value
