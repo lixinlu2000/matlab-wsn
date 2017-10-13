@@ -3,7 +3,7 @@ function status = accr_original_layer(N, S)
 % This implementation is disigned for origianl ACCR ant routing protocol discribed in ACCR.
 % 
 % Written by Xinlu Li, xinlu.li@mydit.ie 02/10/2017
-% Last modified: 2017/10/02  by Xinlu
+% Last modified: 2017/10/12  by Xinlu
 
 % Copyright (C) 2003 PARC Inc.  All Rights Reserved.
 % Define variables:
@@ -55,6 +55,8 @@ persistent evaporation
 persistent heuristic
 persistent s_index
 persistent statistics
+persistent alpha
+persistent beta
 
 switch event
 case 'Init_Application'  % Initilize Application Event
@@ -84,7 +86,12 @@ case 'Init_Application'  % Initilize Application Event
     statistics{ID} = struct('generate',ID,'destination',0,'ant_id',0,'hops',0,'avgValue',0,'minValue',0,'maxValue',0,'ph_increment',0); %store the statistics information for each node
     
     initPower = sim_params('get_app','InitPower');
-    evaporation = 0.1;
+%     evaporation = 0.1;
+%     alpha = 5;
+%     beta = 1;
+    evaporation = 0.5;
+    alpha = 1;
+    beta = 2;
     memory = struct('interval',antInterval);
     
     Set_Start_Clock(antStart); %start forward ant 
@@ -145,6 +152,7 @@ case 'Send_Packet'   % Send packet Command
     end
     if (msgID >= 0) % send data packet
        try
+           % select the next hop according to probability  
            total = 0;
            for ndx = 1:length(NEIGHBORS{ID})
                 total = total + probability{ID}(ndx);
@@ -182,9 +190,9 @@ case 'Packet_Received'  % Packet Received Event
             ph = pheromone{ID}(nID);
             he = heuristic{ID}(nID);
         catch
-            probability{ID}(nID) = 0;
-            pheromone{ID}(nID) = 0.1;
-            heuristic{ID}(nID) = 1;
+            probability{ID}(nID) = 1./length(NEIGHBORS{ID});
+            pheromone{ID}(nID) = 1./length(NEIGHBORS{ID});
+            heuristic{ID}(nID) = 1./length(NEIGHBORS{ID});
         end
     end
     
@@ -196,7 +204,7 @@ case 'Packet_Received'  % Packet Received Event
             [maxValue,minValue,avgValue] = max_min_avg_in_path(antBackward.list);
             fant_length = length(antBackward.list);
 %             phermone_increment = (minValue/((initPower-avgValue)*fant_length))/initPower;
-            phermone_increment = (initPower * avgValue)/(initPower * initPower * fant_length);
+            phermone_increment = (minValue * avgValue)/(initPower * initPower * fant_length);
 %             antBackward.ph_increment = phermone_increment;
             antBackward.ant_id = rdata.ant_id;
             
@@ -244,10 +252,10 @@ case 'Packet_Received'  % Packet Received Event
         %updata heuristic value
         avg_Value = tmp_statistics([tmp_statistics.ant_id] == tmp_ant_id).avgValue;
         heuristic{ID} = Set_New_HE(initPower,avg_Value);
-        %  normalized heruistic value to [0,1]
+        %  normalized heruistic value to (0,1)
         heuristic{ID}=normalization(heuristic{ID});
         
-        probability{ID} = Set_New_Prob2(pheromone{ID},heuristic{ID});
+        probability{ID} = Set_New_Prob2(pheromone{ID},heuristic{ID},alpha,beta);
         
 %         if (~SOURCES(ID))  %do not arrive source node ,continue to forward backward ant 
         if(rdata.generate ~= ID)   
@@ -291,6 +299,7 @@ case 'Clock_Tick'  % Clock_Tick Event
             antForward.ant_id = s_index{ID}.ant_id;
             s_index{ID}.ant_id = s_index{ID}.ant_id + 1;
             %status = accr_original_layer(N, make_event(t+4000+2000*rand, 'Send_Packet', ID, antForward)); 
+%             disp(['==== ant_start in accr routing layer' num2str(t)])
             status = accr_original_layer(N, make_event(t+4000, 'Send_Packet', ID, antForward));            
         end
         Set_Start_Clock(t+memory.interval);
@@ -416,30 +425,31 @@ out = ATTRIBUTES{ID}.power;
 % ph:----pheromone trail
 % idx:----the index of node(data from)
 % ngh_used_en: ----used power of neighbor
-function new = Set_New_Prob1(ph,ngh_used_en)
-global NEIGHBORS
-global ID
-alpha = 0.7;
-beta = 1.0 - alpha;
-for i=1:length(NEIGHBORS{ID})
-    ph_trail = ph(i).^alpha;
-    %visibility = 1/(initPower - current_energy) = 1/used_power
-    visibility = (1/ngh_used_en(i)).^beta;
-%     visibility = ngh_en(i).^bata_coefficient;
-%     tmp = ph(idx).^alfa_coefficient * get_energy(NEIGHBORS{ID}(idx)).^bata_coefficient;
-    tmp = ph_trail * visibility;
-    tmp_2 = dot(ph.^alpha,(1./ngh_used_en).^beta);
-    new(i) = tmp / tmp_2;   
-end
+% function new = Set_New_Prob1(ph,ngh_used_en)
+% global NEIGHBORS
+% global ID
+% alpha = 0.7;
+% beta = 1.0 - alpha;
+% for i=1:length(NEIGHBORS{ID})
+%     ph_trail = ph(i).^alpha;
+%     %visibility = 1/(initPower - current_energy) = 1/used_power
+%     visibility = (1/ngh_used_en(i)).^beta;
+% %     visibility = ngh_en(i).^bata_coefficient;
+% %     tmp = ph(idx).^alfa_coefficient * get_energy(NEIGHBORS{ID}(idx)).^bata_coefficient;
+%     tmp = ph_trail * visibility;
+%     tmp_2 = dot(ph.^alpha,(1./ngh_used_en).^beta);
+%     new(i) = tmp / tmp_2;   
+% end
 
 % update the probability by combining pheromone and heuristic values by a
 % multiplicative function
 % written by Xinlu 02/10/2017
-function new = Set_New_Prob2(ph,he)
+% last modified by xinlu 12/10/2017
+function new = Set_New_Prob2(ph,he,alpha,beta)
 global NEIGHBORS
 global ID
-alpha = 0.7;
-beta = 1.0 - alpha;
+% alpha = 5;
+% beta = 1;
 for i=1:length(NEIGHBORS{ID})
     ph_trail = ph(i).^alpha;
     visibility = he(i).^beta;

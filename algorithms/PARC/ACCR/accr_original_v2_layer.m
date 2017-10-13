@@ -1,4 +1,4 @@
-function status = accr_original_layer(N, S)
+function status = accr_original_v2_layer(N, S)
 
 % This implementation is disigned for origianl ACCR ant routing protocol discribed in ACCR.
 % 
@@ -216,9 +216,9 @@ case 'Packet_Received'  % Packet Received Event
             
             s_index{rdata.generate}.sdx_id = s_index{rdata.generate}.sdx_id + 1;
                        
-            status = accr_original_layer(N, make_event(t, 'Send_Packet', ID, antBackward));  %call Send_Packet Command
+            status = accr_original_v2_layer(N, make_event(t, 'Send_Packet', ID, antBackward));  %call Send_Packet Command
         else
-            status = accr_original_layer(N, make_event(t, 'Send_Packet', ID, data.data));
+            status = accr_original_v2_layer(N, make_event(t, 'Send_Packet', ID, data.data));
         end
     end
            
@@ -245,7 +245,7 @@ case 'Packet_Received'  % Packet Received Event
         
 %         if (~SOURCES(ID))  %do not arrive source node ,continue to forward backward ant 
         if(rdata.generate ~= ID)   
-            status = accr_original_layer(N, make_event(t, 'Send_Packet', ID, data.data));
+            status = accr_original_v2_layer(N, make_event(t, 'Send_Packet', ID, data.data));
         else %reach source node, calculate interval
 %             memory.interval = memory.interval*exp(r-0.5); %adaptively set the interval
             memory.interval = memory.interval*exp(0.5); %adaptively set the interval
@@ -254,7 +254,7 @@ case 'Packet_Received'  % Packet Received Event
     
     if (msgID >= 0) %data packet
         if(~DESTINATIONS(ID)) %forward
-            status = accr_original_layer(N, make_event(t, 'Send_Packet', ID, data.data));
+            status = accr_original_v2_layer(N, make_event(t, 'Send_Packet', ID, data.data));
         end
         
     end
@@ -284,8 +284,8 @@ case 'Clock_Tick'  % Clock_Tick Event
             antForward.generate = ID;
             antForward.ant_id = s_index{ID}.ant_id;
             s_index{ID}.ant_id = s_index{ID}.ant_id + 1;
-            %status = accr_original_layer(N, make_event(t+4000+2000*rand, 'Send_Packet', ID, antForward)); 
-            status = accr_original_layer(N, make_event(t+4000, 'Send_Packet', ID, antForward));            
+            %status = accr_original_v2_layer(N, make_event(t+4000+2000*rand, 'Send_Packet', ID, antForward)); 
+            status = accr_original_v2_layer(N, make_event(t+4000, 'Send_Packet', ID, antForward));            
         end
         Set_Start_Clock(t+memory.interval);
         pass =0;

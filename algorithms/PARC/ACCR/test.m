@@ -52,21 +52,23 @@ sim_params('set_app', 'SourceRate', 0.2);
 sim_params('set_app', 'RandSpeedDestination', 0);
 sim_params('set_app', 'RandSpeedSource', 0.00);
 
-% InitTime = 10;
+initTime = 50;
+sim_params('set_app', 'InitTime',initTime); %init time, app layer will hold on
+
 Max_Sim_Time = 300;
 Number_of_Runs = 1;
 Time_Interval = 10;
-dir=  'results/results1009';
+dir=  'results/results1012';
 % TIME = 1:Time_Interval:(Max_Sim_Time + InitTime); 
-TIME = 1:Time_Interval:(Max_Sim_Time); 
+%TIME = 1:Time_Interval:(Max_Sim_Time); 
 
 % sim_params('set_app', 'DestFunc', 'geo_dest'); 
 % sim_params('set_app', 'CostFunc', 'energy_cost'); 
-
-set_layers({'mac', 'neighborhood', 'ant_routing', 'init_hello', 'app', 'stats'}); % for basic ant routing
-[delays1, throughput1, lossrate1, succrate1, energy1, energy_var1, sent1, control1] = routing_test(Max_Sim_Time, Number_of_Runs, Time_Interval);
+global TIME;
+set_layers({'mac', 'neighborhood', 'accr_original', 'init_hello', 'app', 'stats'}); % for basic ant routing
+[delays1, throughput1, lossrate1, succrate1, energy1, energy_var1, sent1, control1] = routing_test(Max_Sim_Time + initTime, Number_of_Runs, Time_Interval);
 X=[TIME;delays1;throughput1;lossrate1;succrate1;energy1;energy_var1;sent1;control1];
-filename = [dir, '/ant_routing2.txt'];
+filename = [dir, '/accr_original2.txt'];
 fid = fopen(filename, 'w');
 fprintf(fid, '%d %f %f %f %f %d %f %d %d\n', X);
 fclose(fid);

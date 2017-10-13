@@ -323,8 +323,9 @@ prowler('InsertEvents2Q', make_event(alarm_time, 'Clock_Tick', ID, clock));
 
 %send data out
 
-function status = SendData(varargin);
+function status = SendData(varargin)
 global ID t TOTAL_SEND
+% disp(['==== SendData in app_layer' num2str(t)])
 sdata.forward = 0;
 sdata.value = varargin{1};
 sdata.source = ID;
