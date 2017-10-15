@@ -1,0 +1,5 @@
+The aim of this experiment:
+Test the normalized algorithm, the paratemer in ACO Routing, including alpha,beta, evaporation rate etc.
+
+Case 1:
+using one source and on destination pair, 7*7 network, just like the SC protocol simulation, but we prolong the simulation time, because we think the longer run time, more accurate of the results.
