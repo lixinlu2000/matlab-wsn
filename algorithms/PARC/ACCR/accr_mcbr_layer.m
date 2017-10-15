@@ -1,19 +1,26 @@
-function status = eeabr_layer(N, S)
+function status = accr_mcbr_layer(N, S)
 
-% This implementation is disgned for origianl EEABR ant routing protocol discribed in EEABR.
+% This implementation is disigned for variant of original ACCR protocol
+% according to the Sensor-driven Cost aware Ant Routing(SC) protocol.
 % 
-% Written by Xinlu Li, xinlu.li@mydit.ie 06/10/2017
-% Last modified: 2017/10/06  by Xinlu
+% In this protocol, we plan to 1. use the flooding message from destination (init_backward)
+% to update the heuristic value; 2. use the flooding message to initialize
+% the probabiliyt distribution.
 
-% Copyright (C) 2003 PARC Inc.  All Rights Reserved.
+% Written by Xinlu, xinlu.li@mydit.ie 09/10/2017
+% Last modified: 13/10/2017 by xinlu 
+
+%* Copyright (C) 2003 PARC Inc.  All Rights Reserved.
 % Define variables:
 % antInterval:       --time interval of ant agent;
 % antStart:          --start time, default value is 3 second;
 % sourceRate:        --data generation rate in source node, default value =0.1 10 sec 1 msg
 % antRatio:
+% dataGain:          --the data ants are prevented from choosing links with very low
 % probability:
-% DESTINATIONS:      --;
-% SOURCES:           --;
+% DESTINATIONS: 
+% SOURCES:
+
 
 % DO NOT edit simulator code (lines that begin with S;)
 
@@ -49,21 +56,30 @@ global Control_Sent_Count
 persistent antInterval
 persistent antStart
 persistent probability
-persistent pheromone
+% persistent windowSize
+% persistent eta
+% persistent c1 c2
+% persistent z
+% persistent rewardScale
+% persistent dataGain
+persistent probGain
 persistent initPower
+persistent pheromone
 persistent evaporation
 persistent heuristic
 persistent s_index
 persistent statistics
+persistent alpha
+persistent beta
 
 switch event
-case 'Init_Application'  % Initilize Application
+case 'Init_Application'  % Initilize Application Event
     if (ix==1)
         sim_params('set_app', 'Promiscuous', 0);
         antStart = sim_params('get_app', 'AntStart');
         if (isempty(antStart)) 
-            antStart = 120000; %3 sec
-        end
+            antStart = 120000;  %120000/40000 = 3 sec
+        end 
         antRatio = sim_params('get_app', 'AntRatio');
         if (isempty(antRatio)) 
             antRatio = 2; % 1:2 control packets
@@ -74,31 +90,60 @@ case 'Init_Application'  % Initilize Application
         end 
         antInterval = antRatio*40000/sourceRate; 
         Control_Sent_Count = 0;
+%         windowSize = sim_params('get_app', 'WindowSize');
+%         if (isempty(windowSize)) windowSize = 10; end
+%         eta = min(5/windowSize, 1);  % see equation 1 in paper.
+%         c1 = sim_params('get_app', 'C1');
+%         if (isempty(c1)) c1 = 0.7; end
+%         c2 = 1-c1;
+%         z = sim_params('get_app', 'Z');
+%         if (isempty(z)) z = 1; end
+%         rewardScale = sim_params('get_app', 'RewardScale');
+%         if (isempty(rewardScale)) rewardScale = 0.3; end
+%         dataGain = sim_params('get_app', 'DataGain');
+%         if (isempty(dataGain)) dataGain = 1.2; end
+        probGain = sim_params('get_app', 'ProbGain');
+        if (isempty(probGain)) probGain = 1.2; end
     end
-    
     probability{ID} = [];
     pheromone{ID} = [];
     heuristic{ID} = [];
     
-    s_index{ID} = struct('ant_id',1,'sdx_id',1); %store the ant id and statistics id for each node.
+    s_index{ID} = struct('ant_id',1,'sdx_id',1);
     statistics{ID} = struct('generate',ID,'destination',0,'ant_id',0,'hops',0,'avgValue',0,'minValue',0,'maxValue',0,'ph_increment',0); %store the statistics information for each node
-    
+
     initPower = sim_params('get_app','InitPower');
-    evaporation = 0.3;
-    memory = struct('interval',antInterval);
+    evaporation = 0.5;
+    alpha = 1;
+    beta = 2;
     
+%     memory = struct('average', 0, 'variance', 0, 'window', [], 'potentials', [], 'interval', antInterval); 
+    memory = struct('potentials', [], 'interval', antInterval);
+    %memory.potentials(nID) denote the the minimum cost to destination
+    %through de node nID.
+   
     Set_Start_Clock(antStart); %start forward ant 
     
-case 'Send_Packet'   % Send packet
+case 'Send_Packet' % Send packet Command, that means the data will flow down to the support layer, if pass = 1;
     
-    try msgID = data.msgID; catch msgID = 0; end   
-    try list = data.list; catch list = []; end   
-
+    try msgID = data.msgID; catch 
+        msgID = 0; end   
+    try list = data.list; catch
+        list = [];  end
+    
     if(msgID < 0 )  %count the number of control packet, including hello message, init_backward message, forward and backward ant agents.
         Control_Sent_Count = Control_Sent_Count + 1;
     end
     
-    if (msgID == -2) %send backward ant, select the next hop according to list.
+    if (msgID == -inf) % send packet, which come from conrol layer(i.e. init_backward layer or init_hello layer)
+        if (isempty(memory.potentials) || DESTINATIONS(ID))
+            data.cost = mcbr_dest; %mcbr_dest is function, default value is zero.
+        else
+            data.cost = mcbr_cost + min(memory.potentials); %mcbr_cost is function, default value is one.
+        end
+    end
+           
+    if (msgID == -2) %send backward ant
         try 
             data.address = list(1); %address of next hop
             data.list = list(2:length(list));
@@ -107,27 +152,29 @@ case 'Send_Packet'   % Send packet
             pass = 0;
         end
     end
-    if (msgID == -1)  %send forward ant 
-        data.list = [ID, list];         
-        dest_ID = find(DESTINATIONS);
+    if (msgID == -1)  % send forward ant 
+        data.list = [ID, list]; %add the node ID into the visited list.
+        dest_ID = find(DESTINATIONS);  
+        % if the destination is the direct node, enforce the destination as
+        % next hop according to intuition.
         if((ismember(dest_ID,NEIGHBORS{ID}))||(ismember(ID,NEIGHBORS{dest_ID})))
             data.address = find(DESTINATIONS);
         else
-            RestNEIGHBORS = setdiff(NEIGHBORS{ID}, data.list);
-            if (isempty(RestNEIGHBORS)) RestNEIGHBORS = NEIGHBORS{ID}; end
-            total = 0;
-            for n = RestNEIGHBORS
+           RestNEIGHBORS = setdiff(NEIGHBORS{ID}, data.list);
+           if (isempty(RestNEIGHBORS)) RestNEIGHBORS = NEIGHBORS{ID}; end
+           total = 0;
+           for n = RestNEIGHBORS
                ndx = find(NEIGHBORS{ID}==n);
                total = total + probability{ID}(ndx);
-            end
+           end
            %total can be < 1 since only a fraction of the neighbors
-           prob = rand * total;
+           prob = rand*total;
            for n = RestNEIGHBORS
                ndx = find(NEIGHBORS{ID}==n);
                if (prob>0)
                    prob = prob - probability{ID}(ndx);
                    if(prob <=0)
-                      data.address = NEIGHBORS{ID}(ndx); %select next hop
+                      data.address = NEIGHBORS{ID}(ndx);
                       PrintMessage(['->', num2str(data.address')]);
                       inlist = find(data.list==data.address);
                       if (~isempty(inlist)) %there is loop
@@ -142,12 +189,14 @@ case 'Send_Packet'   % Send packet
                end
            end
         end
-    end  %end for msgID == -1
-   if (msgID >= 0) % data packet
+    end
+    if (msgID >= 0) % send data packet      
        try
+           %select the next hop accoding to probability
            total = 0;
            for ndx = 1:length(NEIGHBORS{ID})
-                total = total + probability{ID}(ndx);
+%                total = total + probability{ID}(ndx)^dataGain;
+               total = total + probability{ID}(ndx);
            end
            %total can be < 1 since power is applied
            prob = rand*total;
@@ -156,7 +205,7 @@ case 'Send_Packet'   % Send packet
 %                    prob = prob - probability{ID}(ndx)^dataGain;
                    prob = prob - probability{ID}(ndx);
                    if(prob <=0)
-                      data.address = NEIGHBORS{ID}(ndx); %select next hop
+                      data.address = NEIGHBORS{ID}(ndx); %select next hop 
                       PrintMessage(['f', num2str(data.address')]);
                    end
                end
@@ -165,41 +214,39 @@ case 'Send_Packet'   % Send packet
            pass = 0;
        end
     end
-      
-case 'Packet_Received'
+        
+case 'Packet_Received' % Packet_Received Event, that means the data flow up to control layer until the app layer, if pass = 1; 
     rdata = data.data;
     try msgID = rdata.msgID; catch msgID = 0; end
     try list = rdata.list; catch list = []; end
-    nID = find(NEIGHBORS{ID}==rdata.from); %nID denotes the index last node in neighbor list.
+    nID = find(NEIGHBORS{ID}==rdata.from);
     
     data.data.forward = 1;
     
     pass=0;
     
-    if (msgID ~= -inf)
+    if (msgID ~= -inf) %FANT, BANT, data packet
         try 
             prob = probability{ID}(nID);
             ph = pheromone{ID}(nID);
             he = heuristic{ID}(nID);
         catch
-            probability{ID}(nID) = 0;
-            pheromone{ID}(nID) = 0.1;
-            heuristic{ID}(nID) = 1;
+            probability{ID}(nID) = 1./length(NEIGHBORS{ID});
+            pheromone{ID}(nID) = 1./length(NEIGHBORS{ID});
+            heuristic{ID}(nID) = 1./length(NEIGHBORS{ID});
         end
+    else  % receive init backward packet
+        memory.potentials(nID) = rdata.cost; 
     end
     
-    if (msgID == -1) % receive forward ant
+    if (msgID == -1) %receive forward ant
         if(DESTINATIONS(ID)) %arriving destination
             antBackward.msgID = -2; %change to backward ant
             antBackward.list = rdata.list;
             antBackward.generate = rdata.generate;
             [maxValue,minValue,avgValue] = max_min_avg_in_path(antBackward.list);
             fant_length = length(antBackward.list);
-%             antBackward.path_length = fant_length;
-            phermone_increment = 1/(initPower - (minValue - fant_length)/(avgValue - fant_length));
-            phermone_increment = exp(phermone_increment); %avoid the pheromone trail being too low
-%             phermone_increment = (minValue/((initPower-avgValue)*fant_length))/initPower;
-%             antBackward.ph_increment = phermone_increment;
+            phermone_increment = (minValue * avgValue)/(initPower * initPower * fant_length);
             antBackward.ant_id = rdata.ant_id;
             
             %when FANT reach the destination, update the statistics for ant generated node
@@ -211,16 +258,14 @@ case 'Packet_Received'
             statistics{rdata.generate}(sdx).maxValue = maxValue;
             statistics{rdata.generate}(sdx).minValue = minValue;
             statistics{rdata.generate}(sdx).avgValue = avgValue;
-            
-%             phermone_increment = exp(phermone_increment); %avoid pheromone increment too low
-  
             statistics{rdata.generate}(sdx).ph_increment = phermone_increment;
             
             s_index{rdata.generate}.sdx_id = s_index{rdata.generate}.sdx_id + 1;
-                       
-            status = eeabr_layer(N, make_event(t, 'Send_Packet', ID, antBackward));
+            
+%             antBackward.cost = 0;
+            status = accr_mcbr_layer(N, make_event(t, 'Send_Packet', ID, antBackward));
         else
-            status = eeabr_layer(N, make_event(t, 'Send_Packet', ID, data.data));
+            status = accr_mcbr_layer(N, make_event(t, 'Send_Packet', ID, data.data));
         end
     end
            
@@ -228,7 +273,7 @@ case 'Packet_Received'
         
         tmp_ant_id = rdata.ant_id;
         tmp_statistics = statistics{rdata.generate};
-        
+       
         path_length = tmp_statistics([tmp_statistics.ant_id] == tmp_ant_id).hops;
         tmp_list = 1:path_length;
         tmp_sum = sum(tmp_list);
@@ -238,59 +283,112 @@ case 'Packet_Received'
         ph_pheromone = tmp_pheromone * (length(rdata.list) + 1) / tmp_sum;
         
         pheromone{ID} =  Set_New_PH(pheromone{ID},nID,ph_pheromone,evaporation);
-        
+
         %updata heuristic value
-        ngh_used_energy = get_ngh_used_energy(ID);
+        %TODO:
+        %heuristic value update depend on the estimation from destination.
+        %we simply use the reciprocal of the potentials.
+        tem_heuristic = 1./(1 + memory.potentials);
+        heuristic{ID}(:,1:length(tem_heuristic)) = tem_heuristic;
+%         heuristic{ID} = 1./(1 + memory.potentials);
 %         avg_Value = tmp_statistics([tmp_statistics.ant_id] == tmp_ant_id).avgValue;
 %         heuristic{ID} = Set_New_HE(initPower,avg_Value);
-        heuristic{ID} = 1./ngh_used_energy;
+        %  normalized heruistic value to (0,1)
+        heuristic{ID}=normalization(heuristic{ID});
         
-        probability{ID} = Set_New_Prob2(pheromone{ID},heuristic{ID});
-        
-        if(rdata.generate ~= ID)   
-            status = eeabr_layer(N, make_event(t, 'Send_Packet', ID, data.data));
-        else %reach source node, calculate interval
-            memory.interval = memory.interval*exp(0.5); %adaptively set the interval
+        probability{ID} = Set_New_Prob2(pheromone{ID},heuristic{ID},alpha,beta);
+
+%         
+%         data.data.cost = rdata.cost + mcbr_cost;
+%         if (isempty(memory.window))
+%             memory.average = data.data.cost;
+%             memory.window = [data.data.cost];
+%         else
+%             memory.average = memory.average + eta*(data.data.cost - memory.average);
+%             memory.variance = memory.variance +eta*((data.data.cost - memory.average)^2-memory.variance);
+%             memory.window = [data.data.cost, memory.window];
+%             memory.window = memory.window(1:min(windowSize, length(memory.window)));
+%         end
+%         
+%         Iinf = min(memory.window);
+%         Isup = memory.average + z*sqrt(memory.variance/windowSize);
+%         r = c1*Iinf/data.data.cost;
+%         tmp = (Isup-Iinf) + (data.data.cost-Iinf);
+%         if (tmp>0)
+%             r = r + c2*(Isup-Iinf)/tmp;
+%         end
+%         probability{ID} = Set_New_Prob(probability{ID}, nID, rewardScale*r);
+%         if (~SOURCES(ID))  
+        if(rdata.generate ~= ID)
+            status = accr_mcbr_layer(N, make_event(t, 'Send_Packet', ID, data.data));
+        else
+%             memory.interval = memory.interval*exp(r-0.5); %adaptively set the interval
+            memory.interval = memory.interval*exp(0.5);
         end
     end
+    
+%     if ((msgID >= 0) && (data.data.address == ID)) % receive data packet
+%         if(~DESTINATIONS(ID))
+%             status = accr_mcbr_layer(N, make_event(t, 'Send_Packet', ID, data.data));
+%         else % use for confirmation only
+%             data.data.address = 0;
+%             status = common_layer(N, make_event(t, 'Send_Packet', ID, data.data));
+%         end
+%     end
     
     if (msgID >= 0) %data packet
         if(~DESTINATIONS(ID)) %forward
-            status = eeabr_layer(N, make_event(t, 'Send_Packet', ID, data.data));
+            status = accr_mcbr_layer(N, make_event(t, 'Send_Packet', ID, data.data));
         end
+        
     end
     
     if ((DESTINATIONS(ID) && msgID >= 0) || (msgID == -inf))
-        %msgID == -Inf, data.type = hello_send
         pass =1;
     end
     
-case 'Clock_Tick'
+case 'Clock_Tick' % Clock Tick Event
     try type = data.type; catch type = 'none'; end
     if (strcmp(type, 'ant_start'))
         if(isempty(pheromone{ID}))
             % pheromone initialization
-            pheromone{ID} = ones(1, length(NEIGHBORS{ID}))/10;
+            pheromone{ID} = ones(1, length(NEIGHBORS{ID}))/length(NEIGHBORS{ID});
         end
         if(isempty(heuristic{ID}))
             % heuristic initialization
-            heuristic{ID} = ones(1,length(NEIGHBORS{ID}));
+            heuristic{ID} = ones(1, length(NEIGHBORS{ID}))/length(NEIGHBORS{ID});
         end
-        if (isempty(probability{ID}))
-            %probability initialization
-            probability{ID} = ones(1, length(NEIGHBORS{ID}))/length(NEIGHBORS{ID});
+        if (isempty(probability{ID})) 
+            % Initialize the probability distribution according to both
+            % local cost(mcbcr_cost) and estiamting
+            % cost(memory.potentials), whcich is different with other
+            % algorithms.
+            if (DESTINATIONS(ID))
+                cost = 0;
+            else
+                cost = mcbr_cost + min(memory.potentials);
+            end
+            values = exp((cost - memory.potentials)*probGain);       
+            probability{ID} = values/sum(values);
         end
         if(SOURCES(ID))
             antForward.msgID = -1;
             antForward.generate = ID;
             antForward.ant_id = s_index{ID}.ant_id;
             s_index{ID}.ant_id = s_index{ID}.ant_id + 1;
-            %status = eeabr_layer(N, make_event(t+4000+2000*rand, 'Send_Packet', ID, antForward)); 
-            status = eeabr_layer(N, make_event(t+4000, 'Send_Packet', ID, antForward));            
+            status = accr_mcbr_layer(N, make_event(t+4000, 'Send_Packet', ID, antForward));             
         end
         Set_Start_Clock(t+memory.interval);
         pass =0;
     end
+    if (strcmp(type, 'confirm_timeout')) %if confirm_transmit_layer is included
+        rdata = data.data;
+        address = rdata.address;
+        nID = find(NEIGHBORS{ID}==address);
+        %reduce probablity of that link at least
+%         probability{ID} = Set_New_Prob(probability{ID}, nID, -rewardScale/2);
+        pass = 0;
+    end    
    
 end
 
@@ -331,20 +429,21 @@ otherwise
     error('Bad command for DrawLine.')
 end
 
-function b=Set_Start_Clock(alarm_time);
+function b=Set_Start_Clock(alarm_time)
 global ID
 clock.type = 'ant_start';
 prowler('InsertEvents2Q', make_event(alarm_time, 'Clock_Tick', ID, clock));
 
 % writen by xinlu 
 % update pheromone trail
+% last modified by xinlu 11/10/2017
 function new = Set_New_PH(old,idx,ph,evaporation)
-if(sum(old)==0)
-    old = ones(1,length(old))/length(old);
-end
+% if(sum(old)==0)
+%     old = ones(1,length(old))/length(old);
+% end
 for i =1:length(old)
     if(i==idx)
-        new(i) = (1-evaporation) * old(i) + ph; %positive reinforcement + evaporation
+        new(i) = (1-evaporation) * old(i) + evaporation * ph; %positive reinforcement + evaporation
     else
         new(i) = (1-evaporation) * old(i); %decrease by evaporation
     end
@@ -405,34 +504,11 @@ function out=get_energy(ID)
 global ATTRIBUTES
 out = ATTRIBUTES{ID}.power;
 
-% update the probability according to the ACO metaheuristic in EEABR.
-% ph:----pheromone trail
-% idx:----the index of node(data from)
-% ngh_used_en: ----used power of neighbor
-function new = Set_New_Prob1(ph,ngh_used_en)
+function new = Set_New_Prob2(ph,he,alpha,beta)
 global NEIGHBORS
 global ID
-alpha = 0.7;
-beta = 1.0 - alpha;
-for i=1:length(NEIGHBORS{ID})
-    ph_trail = ph(i).^alpha;
-    %visibility = 1/(initPower - current_energy) = 1/used_power
-    visibility = (1/ngh_used_en(i)).^beta;
-%     visibility = ngh_en(i).^bata_coefficient;
-%     tmp = ph(idx).^alfa_coefficient * get_energy(NEIGHBORS{ID}(idx)).^bata_coefficient;
-    tmp = ph_trail * visibility;
-    tmp_2 = dot(ph.^alpha,(1./ngh_used_en).^beta);
-    new(i) = tmp / tmp_2;   
-end
-
-% update the probability by combining pheromone and heuristic values by a
-% multiplicative function described in ACCR
-% written by Xinlu 02/10/2017
-function new = Set_New_Prob2(ph,he)
-global NEIGHBORS
-global ID
-alpha = 0.7;
-beta = 1.0 - alpha;
+% alpha = 5;
+% beta = 1;
 for i=1:length(NEIGHBORS{ID})
     ph_trail = ph(i).^alpha;
     visibility = he(i).^beta;
