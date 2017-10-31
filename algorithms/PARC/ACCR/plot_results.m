@@ -1,6 +1,6 @@
 function plot_results
 clear;
-list={'accr_original','ant_routing','accr_mcbr'};
+list={'accr_original','ant_routing','accr_mcbr','mcbr_ant','eeabr','accr_acs'};
 resultdir = 'results/results1012';
 num_node = 49;          %the number of node in networks.
 node_Interval = 10;     %the point number in x-coordinate;
@@ -42,7 +42,7 @@ xlabel('Simulation Time(s)');
 ylabel('Latency');
 
 % legend(list{1},list{2},list{3});
-legend('accr\_original','ant\_routing','accr\_mcbr');
+legend('accr\_original','ant\_routing','accr\_mcbr','mcbr\_ant','eeabr','accr\_acs');
 figurename=[resultdir,'/latency.fig'];
 saveas(h,figurename);
 
@@ -59,7 +59,7 @@ xlabel('Simulation Time(s)');
 ylabel('Throughput');
 
 % legend(list{1},list{2},list{3});
-legend('accr\_original','ant\_routing','accr\_mcbr');
+legend('accr\_original','ant\_routing','accr\_mcbr','mcbr\_ant','eeabr','accr\_acs');
 figurename=[resultdir,'/throughput.fig'];
 saveas(h,figurename);
 
@@ -76,7 +76,7 @@ xlabel('Simulation Time(s)');
 ylabel('Success Rate');
 
 % legend(list{1},list{2},list{3});
-legend('accr\_original','ant\_routing','accr\_mcbr');
+legend('accr\_original','ant\_routing','accr\_mcbr','mcbr\_ant','eeabr','accr\_acs');
 figurename=[resultdir,'/succrate.fig'];
 saveas(h,figurename);
 
@@ -93,7 +93,7 @@ xlabel('Simulation Time(s)');
 ylabel('Energy Consumption');
 
 % legend(list{1},list{2},list{3});
-legend('accr\_original','ant\_routing','accr\_mcbr');
+legend('accr\_original','ant\_routing','accr\_mcbr','mcbr\_ant','eeabr','accr\_acs');
 figurename=[resultdir,'/energy.fig'];
 saveas(h,figurename);
 
@@ -110,7 +110,7 @@ xlabel('Simulation Time(s)');
 ylabel('Energy Efficiency');
 
 % legend(list{1},list{2},list{3});
-legend('accr\_original','ant\_routing','accr\_mcbr');
+legend('accr\_original','ant\_routing','accr\_mcbr','mcbr\_ant','eeabr','accr\_acs');
 figurename=[resultdir,'/efficiency.fig'];
 saveas(h,figurename);
 
@@ -127,7 +127,7 @@ xlabel('Simulation Time(s)');
 ylabel('Lifetime Prediction');
 
 % legend(list{1},list{2},list{3});
-legend('accr\_original','ant\_routing','accr\_mcbr');
+legend('accr\_original','ant\_routing','accr\_mcbr','mcbr\_ant','eeabr','accr\_acs');
 figurename=[resultdir,'/lifetime.fig'];
 saveas(h,figurename);
 
@@ -144,7 +144,7 @@ xlabel('Simulation Time(s)');
 ylabel('Energy Standard Deviation');
 
 % legend(list{1},list{2},list{3});
-legend('accr\_original','ant\_routing','accr\_mcbr');
+legend('accr\_original','ant\_routing','accr\_mcbr','mcbr\_ant','eeabr','accr\_acs');
 figurename=[resultdir,'/energy_var.fig'];
 saveas(h,figurename);
 
@@ -161,6 +161,6 @@ xlabel('Simulation Time(s)');
 ylabel('Control Packet Overhead');
 
 % legend(list{1},list{2},list{3});
-legend('accr\_original','ant\_routing','accr\_mcbr');
+legend('accr\_original','ant\_routing','accr\_mcbr','mcbr\_ant','eeabr','accr\_acs');
 figurename=[resultdir,'/control.fig'];
 saveas(h,figurename);

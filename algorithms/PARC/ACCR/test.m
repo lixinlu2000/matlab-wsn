@@ -65,13 +65,13 @@ dir=  'results/results1012';
 % sim_params('set_app', 'DestFunc', 'geo_dest'); 
 % sim_params('set_app', 'CostFunc', 'energy_cost'); 
 global TIME;
-set_layers({'mac', 'neighborhood', 'eeabr', 'init_hello', 'app', 'stats'}); % for basic ant routing
-[delays1, throughput1, lossrate1, succrate1, energy1, energy_var1, sent1, control1] = routing_test(Max_Sim_Time + initTime, Number_of_Runs, Time_Interval);
-X=[TIME;delays1;throughput1;lossrate1;succrate1;energy1;energy_var1;sent1;control1];
-filename = [dir, '/eeabr.txt'];
-fid = fopen(filename, 'w');
-fprintf(fid, '%d %f %f %f %f %d %f %d %d\n', X);
-fclose(fid);
+% set_layers({'mac', 'neighborhood', 'eeabr', 'init_hello', 'app', 'stats'}); % for basic ant routing
+% [delays1, throughput1, lossrate1, succrate1, energy1, energy_var1, sent1, control1] = routing_test(Max_Sim_Time + initTime, Number_of_Runs, Time_Interval);
+% X=[TIME;delays1;throughput1;lossrate1;succrate1;energy1;energy_var1;sent1;control1];
+% filename = [dir, '/eeabr.txt'];
+% fid = fopen(filename, 'w');
+% fprintf(fid, '%d %f %f %f %f %d %f %d %d\n', X);
+% fclose(fid);
 
 % set_layers({'mac', 'neighborhood', 'ant_routing', 'init_hello', 'app', 'stats'}); % for basic ant routing
 % [delays3, throughput3, lossrate3, succrate3, energy3, energy_var3, sent3, control3] = routing_test(Max_Sim_Time + initTime, Number_of_Runs, Time_Interval);
@@ -80,14 +80,14 @@ fclose(fid);
 % fid = fopen(filename, 'w');
 % fprintf(fid, '%d %f %f %f %f %d %f %d %d\n', X);
 % fclose(fid);
-% 
-% set_layers({'mac', 'neighborhood', 'check_duplicate', 'accr_mcbr', 'init_backward', 'app', 'stats'});
-% [delays2, throughput2, lossrate2, succrate2, energy2, energy_var2, sent2,control2] = routing_test(Max_Sim_Time + initTime, Number_of_Runs, Time_Interval);
-% X=[TIME;delays2;throughput2;lossrate2;succrate2;energy2;energy_var2;sent2;control2];
-% filename = [dir, '/accr_mcbr.txt'];
-% fid = fopen(filename, 'w');
-% fprintf(fid, '%d %f %f %f %f %d %f %d %d\n', X);
-% fclose(fid);
+
+set_layers({'mac', 'neighborhood', 'check_duplicate', 'accr_acs', 'init_backward', 'app', 'stats'});
+[delays2, throughput2, lossrate2, succrate2, energy2, energy_var2, sent2,control2] = routing_test(Max_Sim_Time + initTime, Number_of_Runs, Time_Interval);
+X=[TIME;delays2;throughput2;lossrate2;succrate2;energy2;energy_var2;sent2;control2];
+filename = [dir, '/accr_acs.txt'];
+fid = fopen(filename, 'w');
+fprintf(fid, '%d %f %f %f %f %d %f %d %d\n', X);
+fclose(fid);
 
 
 % 
