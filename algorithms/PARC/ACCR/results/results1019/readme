@@ -1,0 +1,4 @@
+the series of the experiment will varify the performance in target tracking scenario.
+the nework consists of 100 nodes, source node and sink node is random selected and move with a certain speed.
+In each simulation, just pick up one source node and only one sink node.
+Each simulation will last for 600 seconds with 10 runs.
