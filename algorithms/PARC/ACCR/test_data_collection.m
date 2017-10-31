@@ -54,11 +54,11 @@ sim_params('set_app', 'RandSpeedSource', 0.00);
 
 initTime = 50;
 sim_params('set_app', 'InitTime',initTime); %init time, app layer will hold on
-
+sim_params('set_app', 'InitNofTimes', Inf);
 Max_Sim_Time = 600;
 Number_of_Runs = 5;
 Time_Interval = 10;
-dir=  'results/results1012';
+dir=  'results/results1031';
 % TIME = 1:Time_Interval:(Max_Sim_Time + InitTime); 
 %TIME = 1:Time_Interval:(Max_Sim_Time); 
 
