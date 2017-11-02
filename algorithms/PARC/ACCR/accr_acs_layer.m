@@ -100,9 +100,6 @@ case 'Init_Application'  % Initilize Application Event
     statistics{ID} = struct('generate',ID,'destination',0,'ant_id',0,'hops',0,'avgValue',0,'minValue',0,'maxValue',0,'ph_increment',0); %store the statistics information for each node
 
     initPower = sim_params('get_app','InitPower');
-%     evaporation = 0.5;
-%     alpha = 1;
-%     beta = 2;
     
 %     memory = struct('average', 0, 'variance', 0, 'window', [], 'potentials', [], 'interval', antInterval); 
     memory = struct('potentials', [], 'interval', antInterval);
@@ -240,9 +237,9 @@ case 'Packet_Received' % Packet_Received Event, that means the data flow up to c
     else  % receive init backward packet
         memory.potentials(nID) = rdata.cost; 
         % update local heuristic value 
-        tem_heuristic = 1./(1 + memory.potentials);
-        heuristic{ID}(:,1:length(tem_heuristic)) = tem_heuristic;
-        heuristic{ID}=normalization(heuristic{ID});
+%         tem_heuristic = 1./(1 + memory.potentials);
+%         heuristic{ID}(:,1:length(tem_heuristic)) = tem_heuristic;
+%         heuristic{ID}=normalization(heuristic{ID});
     end
     
     if (msgID == -1) %receive forward ant
@@ -294,37 +291,13 @@ case 'Packet_Received' % Packet_Received Event, that means the data flow up to c
         %TODO:
         %heuristic value update depend on the estimation from destination.
         %we simply use the reciprocal of the potentials.
-%         tem_heuristic = 1./(1 + memory.potentials);
-%         heuristic{ID}(:,1:length(tem_heuristic)) = tem_heuristic;
-%         heuristic{ID} = 1./(1 + memory.potentials);
-%         avg_Value = tmp_statistics([tmp_statistics.ant_id] == tmp_ant_id).avgValue;
-%         heuristic{ID} = Set_New_HE(initPower,avg_Value);
+        tem_heuristic = 1./(1 + memory.potentials);
+        heuristic{ID}(:,1:length(tem_heuristic)) = tem_heuristic;
         %  normalized heruistic value to (0,1)
-%         heuristic{ID}=normalization(heuristic{ID});
+        heuristic{ID}=normalization(heuristic{ID});
         
         probability{ID} = Set_New_Prob2(pheromone{ID},heuristic{ID},alpha,beta);
 
-%         
-%         data.data.cost = rdata.cost + mcbr_cost;
-%         if (isempty(memory.window))
-%             memory.average = data.data.cost;
-%             memory.window = [data.data.cost];
-%         else
-%             memory.average = memory.average + eta*(data.data.cost - memory.average);
-%             memory.variance = memory.variance +eta*((data.data.cost - memory.average)^2-memory.variance);
-%             memory.window = [data.data.cost, memory.window];
-%             memory.window = memory.window(1:min(windowSize, length(memory.window)));
-%         end
-%         
-%         Iinf = min(memory.window);
-%         Isup = memory.average + z*sqrt(memory.variance/windowSize);
-%         r = c1*Iinf/data.data.cost;
-%         tmp = (Isup-Iinf) + (data.data.cost-Iinf);
-%         if (tmp>0)
-%             r = r + c2*(Isup-Iinf)/tmp;
-%         end
-%         probability{ID} = Set_New_Prob(probability{ID}, nID, rewardScale*r);
-%         if (~SOURCES(ID))  
         if(rdata.generate ~= ID)
             status = accr_acs_layer(N, make_event(t, 'Send_Packet', ID, data.data));
         else
@@ -332,16 +305,7 @@ case 'Packet_Received' % Packet_Received Event, that means the data flow up to c
             memory.interval = memory.interval*exp(0.5);
         end
     end
-    
-%     if ((msgID >= 0) && (data.data.address == ID)) % receive data packet
-%         if(~DESTINATIONS(ID))
-%             status = accr_acs_layer(N, make_event(t, 'Send_Packet', ID, data.data));
-%         else % use for confirmation only
-%             data.data.address = 0;
-%             status = common_layer(N, make_event(t, 'Send_Packet', ID, data.data));
-%         end
-%     end
-    
+        
     if (msgID >= 0) %data packet
         if(~DESTINATIONS(ID)) %forward
             status = accr_acs_layer(N, make_event(t, 'Send_Packet', ID, data.data));
