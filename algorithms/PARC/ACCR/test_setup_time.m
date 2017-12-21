@@ -16,7 +16,7 @@ else
     prowler('CloseGUI')
 end 
 
-N_num = 10;
+N_num = 25;
 % set the default simualtion parameter
 sim_params('set_default') 
 sim_params('set','APP_NAME','Rmase') % set the APP_NAME
@@ -26,14 +26,6 @@ sim_params('set_app_default');
 
 sim_params('set_app','Xsize',N_num);
 sim_params('set_app','Ysize',N_num);
-% 
-% sim_params('set_app', 'SourceType', 'dynamic');
-% sim_params('set_app', 'SourceCenterType', 'fixed');
-% sim_params('set_app', 'SourceCenterX', N_num/2 );
-% sim_params('set_app', 'SourceCenterY', N_num/2 );
-% sim_params('set_app', 'SourceRadius', N_num);
-% sim_params('set_app','SourcePercentage',0.1);
-% sim_params('set_app','SourceUnique',1);
 
 sim_params('set_app','SourceType','static');
 sim_params('set_app', 'SourceCenterType', 'fixed');
@@ -43,6 +35,13 @@ sim_params('set_app', 'SourceCenterY', N_num/2 - 1);
 sim_params('set_app', 'SourceRadius', N_num);
 sim_params('set_app','SourcePercentage',0.1);
 sim_params('set_app','SourceUnique',0);
+
+% sim_params('set_app','SourceType','static');
+% sim_params('set_app', 'SourceCenterType', 'fixed');
+% sim_params('set_app', 'SourceCenterX', 0);
+% sim_params('set_app', 'SourceCenterY', 1);
+% sim_params('set_app','SourceUnique',1);
+
 
 sim_params('set_app', 'DestinationType', 'static');
 sim_params('set_app', 'DestinationCenterType', 'fixed');
@@ -54,28 +53,28 @@ sim_params('set_app', 'SourceRate', 0.2);
 sim_params('set_app', 'RandSpeedDestination', 0);
 sim_params('set_app', 'RandSpeedSource', 0.00);
 
-initTime = 50;
+initTime = 1;
 sim_params('set_app', 'InitTime',initTime); %init time, app layer will hold on
 
 Max_Sim_Time = 600;
 Number_of_Runs = 10;
-Time_Interval = 10;
+Time_Interval = 1;
 dir=  'results/results1019';
 
 global TIME;
-set_layers({'mac', 'neighborhood', 'eeabr', 'init_hello', 'app', 'stats'}); % for basic ant routing
-[delays1, throughput1, lossrate1, succrate1, energy1, energy_var1, sent1, control1] = routing_test(Max_Sim_Time + initTime, Number_of_Runs, Time_Interval);
-X=[TIME;delays1;throughput1;lossrate1;succrate1;energy1;energy_var1;sent1;control1];
-filename = [dir, '/eeabr.txt'];
-fid = fopen(filename, 'w');
-fprintf(fid, '%d %f %f %f %f %d %f %d %d\n', X);
-fclose(fid);
-
-% 
-% set_layers({'mac', 'neighborhood', 'check_duplicate', 'accr_mcbr', 'init_backward', 'app', 'stats'});
-% [delays2, throughput2, lossrate2, succrate2, energy2, energy_var2, sent2,control2] = routing_test(Max_Sim_Time + initTime, Number_of_Runs, Time_Interval);
-% X=[TIME;delays2;throughput2;lossrate2;succrate2;energy2;energy_var2;sent2;control2];
-% filename = [dir, '/accr_mcbr.txt'];
+% set_layers({'mac', 'neighborhood', 'accr_original', 'init_hello', 'app', 'stats'}); % for basic ant routing
+% [delays1, throughput1, lossrate1, succrate1, energy1, energy_var1, sent1, control1] = routing_test(Max_Sim_Time + initTime, Number_of_Runs, Time_Interval);
+% X=[TIME;delays1;throughput1;lossrate1;succrate1;energy1;energy_var1;sent1;control1];
+% filename = [dir, '/eeabr.txt'];
 % fid = fopen(filename, 'w');
 % fprintf(fid, '%d %f %f %f %f %d %f %d %d\n', X);
 % fclose(fid);
+% % 
+% 
+set_layers({'mac', 'neighborhood', 'check_duplicate', 'accr_acs', 'init_backward', 'app', 'stats'});
+[delays2, throughput2, lossrate2, succrate2, energy2, energy_var2, sent2,control2] = routing_test(Max_Sim_Time + initTime, Number_of_Runs, Time_Interval);
+X=[TIME;delays2;throughput2;lossrate2;succrate2;energy2;energy_var2;sent2;control2];
+filename = [dir, '/accr_mcbr.txt'];
+fid = fopen(filename, 'w');
+fprintf(fid, '%d %f %f %f %f %d %f %d %d\n', X);
+fclose(fid);

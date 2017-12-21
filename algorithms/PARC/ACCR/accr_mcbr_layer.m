@@ -52,6 +52,7 @@ global NEIGHBORS
 global DESTINATIONS
 global SOURCES
 global Control_Sent_Count
+global TIME
 
 persistent antInterval
 persistent antStart
@@ -345,6 +346,9 @@ case 'Packet_Received' % Packet_Received Event, that means the data flow up to c
     
     if ((DESTINATIONS(ID) && msgID >= 0) || (msgID == -inf))
         pass =1;
+        if((DESTINATIONS(ID) && msgID >= 0))
+            disp(['I got a data packet: ' num2str(TIME)])
+        end
     end
     
 case 'Clock_Tick' % Clock Tick Event

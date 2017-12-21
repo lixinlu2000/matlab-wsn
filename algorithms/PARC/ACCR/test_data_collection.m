@@ -73,37 +73,20 @@ global TIME;
 % fprintf(fid, '%d %f %f %f %f %d %f %d %d\n', X);
 % fclose(fid);
 
-% set_layers({'mac', 'neighborhood', 'eeabr', 'init_hello', 'app', 'stats'}); % for basic ant routing
-% [delays3, throughput3, lossrate3, succrate3, energy3, energy_var3, sent3, control3] = routing_test(Max_Sim_Time + initTime, Number_of_Runs, Time_Interval);
-% X=[TIME;delays3;throughput3;lossrate3;succrate3;energy3;energy_var3;sent3;control3];
-% filename = [dir, '/eeabr.txt'];
-% fid = fopen(filename, 'w');
-% fprintf(fid, '%d %f %f %f %f %d %f %d %d\n', X);
-% fclose(fid);
-
-set_layers({'mac', 'neighborhood', 'check_duplicate', 'mcbr_ant', 'init_backward', 'app', 'stats'});
-[delays2, throughput2, lossrate2, succrate2, energy2, energy_var2, sent2,control2] = routing_test(Max_Sim_Time + initTime, Number_of_Runs, Time_Interval);
-X=[TIME;delays2;throughput2;lossrate2;succrate2;energy2;energy_var2;sent2;control2];
-filename = [dir, '/mcbr_ant.txt'];
+set_layers({'mac', 'neighborhood', 'accr_original', 'init_hello', 'app', 'stats'}); % for basic ant routing
+[delays3, throughput3, lossrate3, succrate3, energy3, energy_var3, sent3, control3] = routing_test(Max_Sim_Time + initTime, Number_of_Runs, Time_Interval);
+X=[TIME;delays3;throughput3;lossrate3;succrate3;energy3;energy_var3;sent3;control3];
+filename = [dir, '/accr_original2.txt'];
 fid = fopen(filename, 'w');
 fprintf(fid, '%d %f %f %f %f %d %f %d %d\n', X);
 fclose(fid);
 
+% set_layers({'mac', 'neighborhood', 'check_duplicate', 'mcbr_ant', 'init_backward', 'app', 'stats'});
+% [delays2, throughput2, lossrate2, succrate2, energy2, energy_var2, sent2,control2] = routing_test(Max_Sim_Time + initTime, Number_of_Runs, Time_Interval);
+% X=[TIME;delays2;throughput2;lossrate2;succrate2;energy2;energy_var2;sent2;control2];
+% filename = [dir, '/mcbr_ant.txt'];
+% fid = fopen(filename, 'w');
+% fprintf(fid, '%d %f %f %f %f %d %f %d %d\n', X);
+% fclose(fid);
 
-% 
-% set_layers({'mac', 'transmit_queue', 'neighborhood', 'delay_transmit', 'mcbr_smart_ant', 'init_backward', 'app', 'stats'});
-% [delays3, throughput3, lossrate3, succrate3, energy3, energy_var3, sent3] = routing_test(Max_Sim_Time, Number_of_Runs, Time_Interval);
-% X=[TIME;delays3;throughput3;lossrate3;succrate3;energy3;energy_var3;sent3];
-% filename = [dir, '/mcbr_smart_ant.txt'];
-% fid = fopen(filename, 'w');
-% fprintf(fid, '%d %f %f %f %f %d %f %d\n', X);
-% fclose(fid);
-% 
-% set_layers({'mac', 'neighborhood', 'delay_transmit', 'mcbr_flood_ant', 'init_backward', 'app', 'stats'});
-% [delays4, throughput4, lossrate4, succrate4, energy4, energy_var4, sent4] = routing_test(Max_Sim_Time, Number_of_Runs, Time_Interval);
-% X=[TIME;delays4;throughput4;lossrate4;succrate4;energy4;energy_var4;sent4];
-% filename = [dir, '/mcbr_flood_ant.txt'];
-% fid = fopen(filename, 'w');
-% fprintf(fid, '%d %f %f %f %f %d %f %d\n', X);
-% fclose(fid);
 

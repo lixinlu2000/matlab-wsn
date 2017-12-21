@@ -45,6 +45,7 @@ global NEIGHBORS
 global DESTINATIONS
 global SOURCES
 global Control_Sent_Count
+global TIME
 
 persistent antInterval
 persistent antStart
@@ -263,6 +264,10 @@ case 'Packet_Received'
     if ((DESTINATIONS(ID) && msgID >= 0) || (msgID == -inf))
         %msgID == -Inf, data.type = hello_send
         pass =1;
+        
+        if((DESTINATIONS(ID) && msgID >= 0))
+            disp(['I got a data packet: ' num2str(TIME)])
+        end
     end
     
 case 'Clock_Tick'

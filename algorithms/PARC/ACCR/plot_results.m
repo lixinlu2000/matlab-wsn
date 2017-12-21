@@ -1,7 +1,7 @@
 function plot_results
 clear;
-list={'accr_original','ant_routing','accr_mcbr','mcbr_ant','eeabr','accr_acs'};
-resultdir = 'results/results1012';
+list={'accr_acs','accr_mcbr','accr_original','eeabr','mcbr_ant'};
+resultdir = 'results/results1019';
 num_node = 49;          %the number of node in networks.
 node_Interval = 10;     %the point number in x-coordinate;
 %simulation_time = 300;  %simulation time
@@ -29,22 +29,29 @@ for i=1:length(list)
     efficiency(:, i) = received(:, i) ./ energy(:, i);
 end
 
-%% plot the latency
-h = figure;
-for i=1:length(list)
-    x = time(1:size(time,1),i);
-    y = latency(1:size(latency,1),i);
-    plot(x,y,symbols{i});
-    hold on;
-end
-title('Latency');
-xlabel('Simulation Time(s)');
-ylabel('Latency');
+%% efficiency,energy_var,lifetime,control need to be
+% normalized.
+% energy,throughput,succrate
+control = control./(control + sent);
+% energy_var = normalization_plot(energy_var);
+lifetime = lifetime ./20;
 
-% legend(list{1},list{2},list{3});
-legend('accr\_original','ant\_routing','accr\_mcbr','mcbr\_ant','eeabr','accr\_acs');
-figurename=[resultdir,'/latency.fig'];
-saveas(h,figurename);
+%% plot the latency
+% h = figure;
+% for i=1:length(list)
+%     x = time(1:size(time,1),i);
+%     y = latency(1:size(latency,1),i);
+%     plot(x,y,symbols{i});
+%     hold on;
+% end
+% title('Latency');
+% xlabel('Simulation Time(s)');
+% ylabel('Latency');
+% 
+% % legend(list{1},list{2},list{3});
+% legend('accr\_acs','accr\_mcbr','accr\_original','eeabr','mcbr\_ant');
+% figurename=[resultdir,'/latency.fig'];
+% saveas(h,figurename);
 
 %% plot the Throughput
 h = figure;
@@ -59,7 +66,7 @@ xlabel('Simulation Time(s)');
 ylabel('Throughput');
 
 % legend(list{1},list{2},list{3});
-legend('accr\_original','ant\_routing','accr\_mcbr','mcbr\_ant','eeabr','accr\_acs');
+legend('accr\_acs','accr\_mcbr','accr\_original','eeabr','mcbr\_ant');
 figurename=[resultdir,'/throughput.fig'];
 saveas(h,figurename);
 
@@ -71,12 +78,12 @@ for i=1:length(list)
     plot(x,y,symbols{i});
     hold on;
 end
-title('Success Rate');
+% title('Success Rate');
 xlabel('Simulation Time(s)');
-ylabel('Success Rate');
-
+ylabel('Success Rate(%)');
+axis([-inf,inf,0,0.8]);
 % legend(list{1},list{2},list{3});
-legend('accr\_original','ant\_routing','accr\_mcbr','mcbr\_ant','eeabr','accr\_acs');
+legend('accr\_acs','accr\_mcbr','accr\_original','eeabr','mcbr\_ant');
 figurename=[resultdir,'/succrate.fig'];
 saveas(h,figurename);
 
@@ -88,12 +95,11 @@ for i=1:length(list)
     plot(x,y,symbols{i});
     hold on;
 end
-title('Energy Consumption');
+% title('Energy Consumption');
 xlabel('Simulation Time(s)');
-ylabel('Energy Consumption');
+ylabel('Energy Consumption(J)');
 
-% legend(list{1},list{2},list{3});
-legend('accr\_original','ant\_routing','accr\_mcbr','mcbr\_ant','eeabr','accr\_acs');
+legend('accr\_acs','accr\_mcbr','accr\_original','eeabr','mcbr\_ant');
 figurename=[resultdir,'/energy.fig'];
 saveas(h,figurename);
 
@@ -105,12 +111,12 @@ for i=1:length(list)
     plot(x,y,symbols{i});
     hold on;
 end
-title('Energy Efficiency');
+% title('Energy Efficiency');
 xlabel('Simulation Time(s)');
 ylabel('Energy Efficiency');
+axis([-inf,inf,0,7.0]);
 
-% legend(list{1},list{2},list{3});
-legend('accr\_original','ant\_routing','accr\_mcbr','mcbr\_ant','eeabr','accr\_acs');
+legend('accr\_acs','accr\_mcbr','accr\_original','eeabr','mcbr\_ant');
 figurename=[resultdir,'/efficiency.fig'];
 saveas(h,figurename);
 
@@ -122,12 +128,11 @@ for i=1:length(list)
     plot(x,y,symbols{i});
     hold on;
 end
-title('Lifetime Prediction');
+% title('Lifetime Prediction');
 xlabel('Simulation Time(s)');
-ylabel('Lifetime Prediction');
+ylabel('Lifetime Prediction(%)');
 
-% legend(list{1},list{2},list{3});
-legend('accr\_original','ant\_routing','accr\_mcbr','mcbr\_ant','eeabr','accr\_acs');
+legend('accr\_acs','accr\_mcbr','accr\_original','eeabr','mcbr\_ant');
 figurename=[resultdir,'/lifetime.fig'];
 saveas(h,figurename);
 
@@ -139,12 +144,11 @@ for i=1:length(list)
     plot(x,y,symbols{i});
     hold on;
 end
-title('Energy Standard Deviation');
+% title('Energy Standard Deviation');
 xlabel('Simulation Time(s)');
 ylabel('Energy Standard Deviation');
 
-% legend(list{1},list{2},list{3});
-legend('accr\_original','ant\_routing','accr\_mcbr','mcbr\_ant','eeabr','accr\_acs');
+legend('accr\_acs','accr\_mcbr','accr\_original','eeabr','mcbr\_ant');
 figurename=[resultdir,'/energy_var.fig'];
 saveas(h,figurename);
 
@@ -156,11 +160,10 @@ for i=1:length(list)
     plot(x,y,symbols{i});
     hold on;
 end
-title('Control Packet Overhead');
+% title('Control Packet Overhead');
 xlabel('Simulation Time(s)');
 ylabel('Control Packet Overhead');
 
-% legend(list{1},list{2},list{3});
-legend('accr\_original','ant\_routing','accr\_mcbr','mcbr\_ant','eeabr','accr\_acs');
+legend('accr\_acs','accr\_mcbr','accr\_original','eeabr','mcbr\_ant');
 figurename=[resultdir,'/control.fig'];
 saveas(h,figurename);
