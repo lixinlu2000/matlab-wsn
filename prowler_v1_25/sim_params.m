@@ -26,7 +26,6 @@ function y=sim_params(command, varargin)
 %% Written by Gyula Simon, gyula.simon@vanderbilt.edu
 % Last modified: Dec 5, 2003  by GYS
 
-
 persistent SimulationParameters ApplicationParameters
 
 % Added by YZ yzhang@parc.com Dec. 30, 2004

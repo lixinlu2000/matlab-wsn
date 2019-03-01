@@ -44,4 +44,5 @@ sim_params('set', 'STOP_SIM_TIME', 25*40000);
 sim_params('set_app', 'RandSpeedDestination', 0);
 sim_params('set_app', 'RandSpeedSource', 0.00);
 
-peg_aodv(75,10,5);
+%peg_aodv(75,10,5);
+peg_aodv(75,1,5);

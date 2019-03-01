@@ -1,7 +1,7 @@
 function plot_results
 clear;
 list={'accr_acs','accr_mcbr','accr_original','eeabr','mcbr_ant'};
-resultdir = 'results/results1019';
+resultdir = 'results/results1031';
 num_node = 49;          %the number of node in networks.
 node_Interval = 10;     %the point number in x-coordinate;
 %simulation_time = 300;  %simulation time
@@ -68,7 +68,7 @@ ylabel('Throughput');
 % legend(list{1},list{2},list{3});
 legend('accr\_acs','accr\_mcbr','accr\_original','eeabr','mcbr\_ant');
 figurename=[resultdir,'/throughput.fig'];
-saveas(h,figurename);
+%saveas(h,figurename);
 
 %% plot the Success Rate
 h = figure;
@@ -85,7 +85,7 @@ axis([-inf,inf,0,0.8]);
 % legend(list{1},list{2},list{3});
 legend('accr\_acs','accr\_mcbr','accr\_original','eeabr','mcbr\_ant');
 figurename=[resultdir,'/succrate.fig'];
-saveas(h,figurename);
+%saveas(h,figurename);
 
 %% plot the Energy Consumption
 h = figure;
@@ -101,7 +101,7 @@ ylabel('Energy Consumption(J)');
 
 legend('accr\_acs','accr\_mcbr','accr\_original','eeabr','mcbr\_ant');
 figurename=[resultdir,'/energy.fig'];
-saveas(h,figurename);
+%saveas(h,figurename);
 
 %% plot the Energy Efficiency
 h = figure;
@@ -118,7 +118,7 @@ axis([-inf,inf,0,7.0]);
 
 legend('accr\_acs','accr\_mcbr','accr\_original','eeabr','mcbr\_ant');
 figurename=[resultdir,'/efficiency.fig'];
-saveas(h,figurename);
+%saveas(h,figurename);
 
 %% plot the Lifetime Prediction
 h = figure;

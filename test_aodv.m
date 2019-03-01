@@ -22,8 +22,8 @@ sim_params('set','APP_NAME','Rmase') % set the APP_NAME
 %  set application default parameter
 sim_params('set_app_default');
 
-sim_params('set_app','Xsize',10);
-sim_params('set_app','Ysize',10);
+sim_params('set_app','Xsize',7);
+sim_params('set_app','Ysize',7);
 
 sim_params('set_app', 'SourceCenterType', 'fixed');
 sim_params('set_app', 'SourceCenterX', 3);
